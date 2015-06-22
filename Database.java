@@ -39,6 +39,7 @@ public class Database {
     public Database(final GraphDatabaseService graphDb){
         this.graphDb = graphDb;
     }
+
     private static enum relTypes implements RelationshipType
     {
         HAS_GENOTYPE,
