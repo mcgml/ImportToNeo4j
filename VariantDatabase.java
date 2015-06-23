@@ -4,47 +4,90 @@ import htsjdk.variant.variantcontext.Allele;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
 import org.neo4j.graphdb.*;
-import org.neo4j.graphdb.schema.IndexDefinition;
-import org.neo4j.graphdb.schema.Schema;
-import org.neo4j.graphdb.Direction;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.traversal.Evaluators;
-import org.neo4j.graphdb.traversal.TraversalDescription;
-import org.neo4j.graphdb.traversal.Traverser;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.neo4j.io.fs.FileUtils;
+import org.neo4j.kernel.impl.util.register.NeoRegister;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by ml on 01/04/15.
+ * Created by ml on 23/06/15.
  */
-public class Database {
+public class VariantDatabase {
 
-    private static final Logger log = Logger.getLogger(Database.class.getName());
+    private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());
 
+    private Label sampleLabel = DynamicLabel.label("Sample");
+    private Label phenotypeLabel = DynamicLabel.label("Phenotype");
+    private Label variantLabel = DynamicLabel.label("Variant");
+    private Label geneLabel = DynamicLabel.label("Gene");
+    private Label annotationLabel = DynamicLabel.label("Annotation");
 
+    private File neo4jDBPath;
+    private GraphDatabaseService graphDb;
+    private Node firstNode, secondNode;
+    private NeoRegister.Relationship relationShip;
+    private VCFFileReader vcfFileReader;
 
-    private ArrayList<Long> sampleIDNodeIDs = new ArrayList<>();
-    private final GraphDatabaseService graphDb;
-
-    public Database(final GraphDatabaseService graphDb){
-        this.graphDb = graphDb;
+    public VariantDatabase(VCFFileReader vcfFileReader, File neo4jDBPath){
+        this.vcfFileReader = vcfFileReader;
+        this.neo4jDBPath = neo4jDBPath;
     }
 
-    private static enum relTypes implements RelationshipType
+    private enum relTypes implements RelationshipType
     {
         HAS_GENOTYPE,
         IN_GENE,
-        HAS_ANNOTATION
+        HAS_ANNOTATION,
+        HAS_PHENOTYPE
     }
 
+    public void createDatabase(){
 
-    public static void addVariantsAndAnnotations(final GraphDatabaseService graphDb, final VCFFileReader vcfFileReader){
+        log.log(Level.INFO, "Starting database ...");
+
+        //create DB
+        graphDb = new GraphDatabaseFactory()
+                .newEmbeddedDatabaseBuilder(neo4jDBPath)
+                .newGraphDatabase();
+
+        Neo4j.registerShutdownHook(graphDb);
+    }
+
+    public void addSampleNodes(){
+        log.log(Level.INFO, "Adding sample nodes ...");
+
+        Node node;
+
+        for (String sampleID : vcfFileReader.getFileHeader().getSampleNamesInOrder()){
+
+            if (!Neo4j.hasNode(graphDb, sampleLabel, "SampleID", sampleID)){
+
+                //add sampleID
+                try (Transaction tx = graphDb.beginTx()) {
+
+                    node = graphDb.createNode();
+                    node.addLabel(sampleLabel);
+                    node.setProperty("SampleID", sampleID);
+
+                    tx.success();
+                }
+
+            } else {
+                log.log(Level.INFO, sampleID + " already exists in database.");
+            }
+
+        }
+
+    }
+
+    public void addVariantsAndAnnotations(){
 
         log.log(Level.INFO, "Adding variants and annotations ...");
 
@@ -87,7 +130,7 @@ public class Database {
             for (Allele allele : variant.getAlleles()){
                 if (allele.isNonReference()){
 
-                    if (!hasNode(graphDb, variantLabel, "VariantID", variant.getContig() + ":" + variant.getStart() + "-" + variant.getEnd() + variant.getReference() + ">" + allele.getBaseString())){
+                    if (!Neo4j.hasNode(graphDb, variantLabel, "VariantID", variant.getContig() + ":" + variant.getStart() + "-" + variant.getEnd() + variant.getReference() + ">" + allele.getBaseString())){
 
                         //add variant
                         try (Transaction tx = graphDb.beginTx()) {
@@ -407,6 +450,64 @@ public class Database {
 
     }
 
+    public void linkSamplesToVariants(){
 
+        log.log(Level.INFO, "Linking samples to variants ...");
+
+        //get sampleID nodeIDs
+        ArrayList<Long> sampleIDNodes = new ArrayList<>();
+
+        Node sampleIDNode, variantNode;
+        Iterator<VariantContext> it = vcfFileReader.iterator();
+
+        //read VCF file
+        while (it.hasNext()) {
+            VariantContext variant = it.next();
+
+            //skip variants failing QC
+            if (variant.isFiltered() || !variant.isVariant()) continue;
+
+            //loop over genotypes
+            for (int n = 0; n < variant.getGenotypes().size(); ++n){
+
+                //skip wildtype genotypes
+                if (!variant.getGenotypes().get(n).isHomRef() && !variant.getGenotypes().get(n).isNoCall()){
+                    for (Allele allele : variant.getGenotypes().get(n).getAlleles()){
+
+                        /*make link
+                        try (Transaction tx = graphDb.beginTx()) {
+
+                            Relationship relationship = sampleIDNodes.get(n).createRelationshipTo(
+                                    Neo4j.getNodes(graphDb, variantLabel, "VariantID", variant.getContig() + ":" + variant.getStart() + "-" + variant.getEnd() + variant.getReference() + ">" + allele.getBaseString()).get(0),
+                                    relTypes.HAS_GENOTYPE);
+
+                            if (variant.getGenotypes().get(n).isHet()) relationship.setProperty("Het", true); else relationship.setProperty("Het", false);
+                            if (variant.getGenotypes().get(n).isHomVar()) relationship.setProperty("HomVar", true); else relationship.setProperty("HomVar", false);
+                            if (variant.getGenotypes().get(n).isMixed()) relationship.setProperty("Mixed", true); else relationship.setProperty("Mixed", false);
+
+                            tx.success();
+                        }*/
+
+                    }
+                }
+
+            }
+
+        }
+
+    }
+
+    public void shutdownDatabase(){
+        log.log(Level.INFO, "Shutting down database ...");
+
+        graphDb.shutdown();
+    }
+
+    public void deleteDatabase() throws IOException {
+
+        log.log(Level.INFO, "Deleting database ...");
+
+        FileUtils.deleteRecursively(neo4jDBPath);
+    }
 
 }
