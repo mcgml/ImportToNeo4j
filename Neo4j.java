@@ -5,6 +5,8 @@ import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.graphdb.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class Neo4j{
@@ -148,9 +150,26 @@ public class Neo4j{
 
         return nodeIDs;
     }
-    private static Node getNodeById(final GraphDatabaseService graphDb, final long nodeID, final RelationshipType relationshipType) {
-        return graphDb.getNodeById(nodeID)
-                .getSingleRelationship(relationshipType, Direction.OUTGOING)
-                .getEndNode();
+    public static Node getUniqueMergedNode(final GraphDatabaseService graphDb, final Label label, final String field, final Object value){
+
+        Node result = null;
+        ResourceIterator<Node> resultIterator = null;
+        try ( Transaction tx = graphDb.beginTx() )
+        {
+            HashMap<String, Object> parameters = new HashMap<>();
+
+            String queryString = "MERGE (n:label {field: {value}}) RETURN n";
+            parameters.put( "label", label.name() );
+            parameters.put( "field", field );
+            parameters.put( "value", value );
+
+            resultIterator = graphDb.execute( queryString, parameters ).columnAs( "n" );
+            result = resultIterator.next();
+
+            tx.success();
+
+            return result;
+        }
+
     }
 }

@@ -29,14 +29,18 @@ public class Main {
             variantDatabase.deleteDatabase();
         } catch (IOException e){
             log.log(Level.SEVERE, "Could not delete database: " + e.getMessage());
+            System.exit(1);
         }
 
         //create new DB
         variantDatabase.createDatabase();
+        variantDatabase.createIndexes();
         variantDatabase.addSampleNodes();
+        variantDatabase.addVariants();
+        variantDatabase.addAnnotations();
+        variantDatabase.linkSamplesToVariants();
 
-
-
+        variantDatabase.shutdownDatabase();
 
     }
 
