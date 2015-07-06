@@ -16,7 +16,7 @@ public class Main {
     public static void main(String[] args) {
 
         if (args.length != 2) {
-            System.err.println("Usage: <AnnotatedVCFFile> <Neo4jDBPath>");
+            System.err.println("Usage: <VEPAnnotatedVCFFile> <Neo4jDBPath>");
             System.exit(1);
         }
 
@@ -40,6 +40,7 @@ public class Main {
         //create new DB
         variantDatabase.createDatabase();
         variantDatabase.createIndexes();
+        variantDatabase.addPatientNodes();
         variantDatabase.addSampleNodes();
         variantDatabase.addVariants();
         variantDatabase.addFunctionalAnnotations();
