@@ -172,4 +172,20 @@ public class Neo4j{
         }
 
     }
+    private void executeCypherQuery(final GraphDatabaseService graphDb, String cypherCommand){
+        try (Transaction ignored = graphDb.beginTx();
+             Result result = graphDb.execute( cypherCommand ) ) {
+
+            /*while ( result.hasNext() )
+            {
+                Map<String,Object> row = result.next();
+                for ( Map.Entry<String,Object> column : row.entrySet() )
+                {
+                    rows += column.getKey() + ": " + column.getValue() + "; ";
+                }
+                rows += "\n";
+            }*/
+
+        }
+    }
 }
