@@ -42,6 +42,7 @@ public class Main {
         variantDatabase.createIndexes();
         variantDatabase.addPatientNodes();
         variantDatabase.addSampleNodes();
+        variantDatabase.loadVariantsIntoMemory();
         variantDatabase.addVariants();
         variantDatabase.addFunctionalAnnotations();
         variantDatabase.linkSamplesToVariants();

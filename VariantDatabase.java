@@ -25,46 +25,40 @@ public class VariantDatabase {
     private Label annotationLabel = DynamicLabel.label("Annotation");
     private Label geneLabel = DynamicLabel.label("Gene");
     private Label featureLabel = DynamicLabel.label("Feature");
-    private Label codingSequenceVariantLabel = DynamicLabel.label("CodingSequenceVariant")
-    private Label downstreamgeneVariantLabel = DynamicLabel.label(DownstreamgeneVariant)
-    private Label featureElongationLabel = DynamicLabel.label(FeatureElongation)
-    private Label featureTruncationLabel = DynamicLabel.label(FeatureTruncation)
-    private Label fivePrimeUtrVariantLabel = DynamicLabel.label(FivePrimeUtrVariant)
-    private Label frameshiftVariantLabel = DynamicLabel.label(FrameshiftVariant)
-    private Label incompleteTerminalCodonVariantLabel = DynamicLabel.label(IncompleteTerminalCodonVariant)
-    private Label inframeDeletionLabel = DynamicLabel.label(InframeDeletion)
-    private Label inframeInsertionLabel = DynamicLabel.label(InframeInsertion)
-    private Label initiatorCodonVariantLabel = DynamicLabel.label(InitiatorCodonVariant)
-    private Label intergenicVariantLabel = DynamicLabel.label(IntergenicVariant)
-    private Label intronVariantLabel = DynamicLabel.label(IntronVariant)
-    private Label matureMiRNAVariantLabel = DynamicLabel.label(MatureMiRNAVariant)
-    private Label missenseVariantLabel = DynamicLabel.label(MissenseVariant)
-    private Label nmdTranscriptVariantLabel = DynamicLabel.label(NmdTranscriptVariant)
-    private Label nonCodingTranscriptExonVariantLabel = DynamicLabel.label(NonCodingTranscriptExonVariant)
-    private Label nonCodingTranscriptVariantLabel = DynamicLabel.label(NonCodingTranscriptVariant)
-    private Label regulatoryRegionAblationLabel = DynamicLabel.label(RegulatoryRegionAblation)
-    private Label regulatoryRegionAmplificationLabel = DynamicLabel.label(RegulatoryRegionAmplification )
-    private Label regulatoryRegionVariantLabel = DynamicLabel.label(RegulatoryRegionVariant)
-    private Label spliceAcceptorVariantLabel = DynamicLabel.label(SpliceAcceptorVariant)
-    private Label spliceDonorVariantLabel = DynamicLabel.label(SpliceDonorVariant)
-    private Label spliceRegionVariantLabel = DynamicLabel.label(SpliceRegionVariant)
-    private Label stopGainedLabel = DynamicLabel.label(StopGained)
-    private Label stopLostLabel = DynamicLabel.label(StopLost)
-    private Label stopRetainedVariantLabel = DynamicLabel.label(StopRetainedVariant)
-    private Label synonymousVariantLabel = DynamicLabel.label(SynonymousVariant)
-    private Label tfBindingSiteVariantLabel = DynamicLabel.label(TfBindingSiteVariant)
-    private Label tfbsAblationLabel = DynamicLabel.label(TfbsAblation)
-    private Label tfbsAmplificationLabel = DynamicLabel.label(TfbsAmplification)
-    private Label threePrimeUtrVariantLabel = DynamicLabel.label(ThreePrimeUtrVariant)
-    private Label transcriptAblationLabel = DynamicLabel.label(TranscriptAblation)
-    private Label transcriptAmplificationLabel = DynamicLabel.label(TranscriptAmplification)
-    private Label upstreamGeneVariantLabel = DynamicLabel.label(UpstreamGeneVariant)
-
-
-
-
-
-
+    private Label codingSequenceVariantLabel = DynamicLabel.label("CodingSequenceVariant");
+    private Label downstreamGeneVariantLabel = DynamicLabel.label("DownstreamGeneVariant");
+    private Label featureElongationLabel = DynamicLabel.label("FeatureElongation");
+    private Label featureTruncationLabel = DynamicLabel.label("FeatureTruncation");
+    private Label fivePrimeUtrVariantLabel = DynamicLabel.label("FivePrimeUtrVariant");
+    private Label frameshiftVariantLabel = DynamicLabel.label("FrameshiftVariant");
+    private Label incompleteTerminalCodonVariantLabel = DynamicLabel.label("IncompleteTerminalCodonVariant");
+    private Label inframeDeletionLabel = DynamicLabel.label("InframeDeletion");
+    private Label inframeInsertionLabel = DynamicLabel.label("InframeInsertion");
+    private Label initiatorCodonVariantLabel = DynamicLabel.label("InitiatorCodonVariant");
+    private Label intergenicVariantLabel = DynamicLabel.label("IntergenicVariant");
+    private Label intronVariantLabel = DynamicLabel.label("IntronVariant");
+    private Label matureMiRNAVariantLabel = DynamicLabel.label("MatureMiRNAVariant");
+    private Label missenseVariantLabel = DynamicLabel.label("MissenseVariant");
+    private Label nmdTranscriptVariantLabel = DynamicLabel.label("NmdTranscriptVariant");
+    private Label nonCodingTranscriptExonVariantLabel = DynamicLabel.label("NonCodingTranscriptExonVariant");
+    private Label nonCodingTranscriptVariantLabel = DynamicLabel.label("NonCodingTranscriptVariant");
+    private Label regulatoryRegionAblationLabel = DynamicLabel.label("RegulatoryRegionAblation");
+    private Label regulatoryRegionAmplificationLabel = DynamicLabel.label("RegulatoryRegionAmplification");
+    private Label regulatoryRegionVariantLabel = DynamicLabel.label("RegulatoryRegionVariant");
+    private Label spliceAcceptorVariantLabel = DynamicLabel.label("SpliceAcceptorVariant");
+    private Label spliceDonorVariantLabel = DynamicLabel.label("SpliceDonorVariant");
+    private Label spliceRegionVariantLabel = DynamicLabel.label("SpliceRegionVariant");
+    private Label stopGainedLabel = DynamicLabel.label("StopGained");
+    private Label stopLostLabel = DynamicLabel.label("StopLost");
+    private Label stopRetainedVariantLabel = DynamicLabel.label("StopRetainedVariant");
+    private Label synonymousVariantLabel = DynamicLabel.label("SynonymousVariant");
+    private Label tfBindingSiteVariantLabel = DynamicLabel.label("TfBindingSiteVariant");
+    private Label tfbsAblationLabel = DynamicLabel.label("TfbsAblation");
+    private Label tfbsAmplificationLabel = DynamicLabel.label("TfbsAmplification");
+    private Label threePrimeUtrVariantLabel = DynamicLabel.label("ThreePrimeUtrVariant");
+    private Label transcriptAblationLabel = DynamicLabel.label("TranscriptAblation");
+    private Label transcriptAmplificationLabel = DynamicLabel.label("TranscriptAmplification");
+    private Label upstreamGeneVariantLabel = DynamicLabel.label("UpstreamGeneVariant");
     private File neo4jDBPath;
     private GraphDatabaseService graphDb;
     private VCFFileReader vcfFileReader;
@@ -120,16 +114,16 @@ public class VariantDatabase {
 
         log.log(Level.INFO, "Adding sample nodes ...");
 
-        Node node;
-
         for (String sampleID : vcfFileReader.getFileHeader().getSampleNamesInOrder()){
 
-            if (!Neo4j.hasNode(graphDb, sampleLabel, "SampleID", sampleID)){
+            ArrayList<Node> nodes = Neo4j.getNodes(graphDb, sampleLabel, "SampleID", sampleID);
+
+            if (nodes.size() == 0){
 
                 //add sampleID
                 try (Transaction tx = graphDb.beginTx()) {
 
-                    node = graphDb.createNode();
+                    Node node = graphDb.createNode();
                     node.addLabel(sampleLabel);
                     node.setProperty("SampleID", sampleID);
 
@@ -139,6 +133,8 @@ public class VariantDatabase {
                     tx.success();
                 }
 
+            } else {
+                sampleNodeIds.put(sampleID, nodes.get(0).getId());
             }
 
         }
@@ -146,6 +142,9 @@ public class VariantDatabase {
     }
 
     public void loadVariantsIntoMemory(){
+
+        log.log(Level.INFO, "Loading variants into memory ...");
+
         Iterator<VariantContext> variantContextIterator = vcfFileReader.iterator();
 
         //read VCF file
@@ -164,8 +163,6 @@ public class VariantDatabase {
 
         log.log(Level.INFO, "Adding variants ...");
 
-        Node node;
-
         //read VCF file
         for (VariantContext variant : variants){
 
@@ -173,32 +170,36 @@ public class VariantDatabase {
             for (Allele allele : variant.getAlleles()){
 
                 //skip wildtype alleles
-                if (allele.isReference()) continue;
+                if (allele.isReference()) {
+                    continue;
+                }
 
-                if (!Neo4j.hasNode(graphDb, variantLabel, "VariantID",  variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString())){
+                String variantLookup = variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString();
+                ArrayList<Node> nodes = Neo4j.getNodes(graphDb, sampleLabel, "VariantID", variantLookup);
+
+                if (nodes.size() == 0){
 
                     //add variant
                     try (Transaction tx = graphDb.beginTx()) {
 
-                        node = graphDb.createNode();
+                        Node node = graphDb.createNode();
                         node.addLabel(variantLabel);
 
-                        node.setProperty("VariantID", variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString());
+                        node.setProperty("VariantID", variantLookup);
                         node.setProperty("Contig", variant.getContig());
                         node.setProperty("Position", variant.getStart());
                         node.setProperty("Reference", variant.getReference().getBaseString());
                         node.setProperty("Alternative", allele.getBaseString());
 
                         //store node Id for later
-                        variantNodeIds.put(variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString(), node.getId());
+                        variantNodeIds.put(variantLookup, node.getId());
 
                         tx.success();
                     }
 
                 } else {
                     //store node Id for later
-                    variantNodeIds.put(variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString(),
-                            Neo4j.getUniqueMergedNode(graphDb, variantLabel, "VariantID", variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString()).getId());
+                    variantNodeIds.put(variantLookup, nodes.get(0).getId());
                 }
 
             }
@@ -211,16 +212,11 @@ public class VariantDatabase {
 
         log.log(Level.INFO, "Adding functional annotations ...");
 
-        Node node;
+        ArrayList<Node> nodes;
         HashMap<String, HashSet<VEPAnnotation>> splitAnnotations = new HashMap<>();
-        Iterator<VariantContext> variantContextIterator = vcfFileReader.iterator();
 
         //read VCF file
-        while (variantContextIterator.hasNext()) {
-            VariantContext variant = variantContextIterator.next();
-
-            //skip hom-ref & filtered
-            if (variant.isFiltered() || !variant.isVariant()) continue;
+        for (VariantContext variant : variants){
 
             //split annotations and make unique
             try {
@@ -252,11 +248,15 @@ public class VariantDatabase {
             for (Allele allele : variant.getAlleles()){
 
                 //skip wildtype alleles
-                if (allele.isReference()) continue;
+                if (allele.isReference()){
+                    continue;
+                }
+
+                String variantLookup = variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString();
 
                 //skip missing alleles
                 if (!splitAnnotations.containsKey(allele.getBaseString())) {
-                    log.log(Level.WARNING, "Missing annotation for: " + variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString());
+                    log.log(Level.WARNING, "Missing annotation for: " + variantLookup);
                     continue;
                 }
 
@@ -264,14 +264,17 @@ public class VariantDatabase {
                 for (VEPAnnotation annotation : splitAnnotations.get(allele.getBaseString())){
 
                     //transcript, ensg, symbol
-                    if (annotation.getFeature() == null || annotation.getGene() == null || annotation.getSymbol() == null) continue;
+                    if (annotation.getFeature() == null || annotation.getGene() == null || annotation.getSymbol() == null){
+                        continue;
+                    }
 
                     //add gene node
-                    if (!Neo4j.hasNode(graphDb, geneLabel, "Symbol", annotation.getSymbol())){
+                    nodes = Neo4j.getNodes(graphDb, geneLabel, "Symbol", annotation.getSymbol());
+                    if (nodes.size() == 0){
 
                         try (Transaction tx = graphDb.beginTx()) {
 
-                            node = graphDb.createNode();
+                            Node node = graphDb.createNode();
                             node.addLabel(geneLabel);
 
                             node.setProperty("GeneID", annotation.getGene());
@@ -283,15 +286,16 @@ public class VariantDatabase {
                         }
 
                     } else {
-                        geneNodeIds.put(annotation.getSymbol(), Neo4j.getUniqueMergedNode(graphDb, geneLabel, "Symbol", annotation.getSymbol()).getId());
+                        geneNodeIds.put(annotation.getSymbol(), nodes.get(0).getId());
                     }
 
                     //add transcript node
-                    if (!Neo4j.hasNode(graphDb, featureLabel, "Feature", annotation.getFeature())){
+                    nodes = Neo4j.getNodes(graphDb, featureLabel, "Feature", annotation.getFeature());
+                    if (nodes.size() == 0){
 
                         try (Transaction tx = graphDb.beginTx()) {
 
-                            node = graphDb.createNode();
+                            Node node = graphDb.createNode();
                             node.addLabel(featureLabel);
 
                             node.setProperty("Feature", annotation.getFeature());
@@ -303,17 +307,18 @@ public class VariantDatabase {
                         }
 
                     } else {
-                        featureNodeIds.put(annotation.getFeature(), Neo4j.getUniqueMergedNode(graphDb, featureLabel, "Symbol", annotation.getSymbol()).getId());
+                        featureNodeIds.put(annotation.getFeature(), nodes.get(0).getId());
                     }
 
                     //make annotation node
-                    if (!Neo4j.hasNode(graphDb, annotationLabel, "AnnotationID", variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString() + ":" + annotation.getFeature())){
+                    nodes = Neo4j.getNodes(graphDb, annotationLabel, "AnnotationID", variantLookup);
+                    if (nodes.size() == 0){
 
                         try (Transaction tx = graphDb.beginTx()) {
 
-                            node = graphDb.createNode();
+                            Node node = graphDb.createNode();
                             node.addLabel(annotationLabel);
-                            node.setProperty("AnnotationID", variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString() + ":" + annotation.getFeature());
+                            node.setProperty("AnnotationID", variantLookup + ":" + annotation.getFeature());
 
                             if(annotation.getExon() != null) {
                                 String[] fields = annotation.getExon().split("/");
@@ -331,24 +336,15 @@ public class VariantDatabase {
                             }
                             if(annotation.getStrand() != null) node.setProperty("Strand", annotation.getStrand());
 
-                            annotationNodeIds.put(variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString() + ":" + annotation.getFeature(), node.getId());
+                            annotationNodeIds.put(variantLookup + ":" + annotation.getFeature(), node.getId());
 
+                            Relationship relationship = graphDb.getNodeById(variantNodeIds.get(variantLookup)).createRelationshipTo(node, relTypes.HAS_ANNOTATION);
                             tx.success();
                         }
 
-                        //link variant to annotation
-                        try (Transaction tx = graphDb.beginTx()) {
-
-                            Relationship relationship = graphDb.getNodeById(variantNodeIds.get(variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString()))
-                                    .createRelationshipTo(node, relTypes.HAS_ANNOTATION);
-
-                            tx.success();
-
-                        } //done creating relationship
-
                     } else {
-                        annotationNodeIds.put(variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString() + ":" + annotation.getFeature(),
-                                Neo4j.getUniqueMergedNode(graphDb, annotationLabel, "AnnotationID", variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString() + ":" + annotation.getFeature()).getId());
+                        annotationNodeIds.put(variantLookup + ":" + annotation.getFeature(),
+                                Neo4j.getNodes(graphDb, annotationLabel, "AnnotationID", variantLookup + ":" + annotation.getFeature()).get(0).getId());
                     }
 
                 } //done looping over annotations
@@ -361,6 +357,7 @@ public class VariantDatabase {
 
     }
 
+    //HERE
     //TODO check why? duplicate relationships
     public void linkSamplesToVariants(){
 
