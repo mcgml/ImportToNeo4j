@@ -9,6 +9,8 @@ import java.util.logging.Logger;
  */
 public class VEPAnnotation {
 
+    //TODO re-write class and include dbsnfp
+
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
     private String record, allele, gene, feature, featureType, cDNAPosition, cdsPosition, proteinPosition, aminoAcids, codons, existingVariation, aaMaf, eaMaf, exon, intron, distance, strand, symbol, sift, polyphen, gmaf, hgvsCoding, hgvsProtein, afrMaf, amrMaf, asnMaf, eurMaf;

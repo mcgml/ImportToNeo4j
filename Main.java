@@ -40,11 +40,11 @@ public class Main {
         //create new DB
         variantDatabase.createDatabase();
         variantDatabase.createIndexes();
-        variantDatabase.addPatientNodes();
+        //variantDatabase.addPatientNodes();
         variantDatabase.addSampleNodes();
         variantDatabase.loadVariantsIntoMemory();
         variantDatabase.addVariants();
-        variantDatabase.addFunctionalAnnotations();
+        //variantDatabase.addFunctionalAnnotations();
         variantDatabase.linkSamplesToVariants();
 
         variantDatabase.shutdownDatabase();

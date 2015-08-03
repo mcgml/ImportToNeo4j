@@ -172,7 +172,8 @@ public class Neo4j{
         }
 
     }
-    private void executeCypherQuery(final GraphDatabaseService graphDb, String cypherCommand){
+    public static void executeCypherQuery(final GraphDatabaseService graphDb, String cypherCommand){
+        //TODO check
         try (Transaction ignored = graphDb.beginTx();
              Result result = graphDb.execute( cypherCommand ) ) {
 
@@ -187,5 +188,17 @@ public class Neo4j{
             }*/
 
         }
+    }
+    public static void createRelationship(final GraphDatabaseService graphDb, Long nodeId1, Long nodeId2, RelationshipType type){
+
+        try (Transaction tx = graphDb.beginTx()) {
+
+            Node node1 = graphDb.getNodeById(nodeId1);
+            Node node2 = graphDb.getNodeById(nodeId2);
+
+            Relationship relationship = node1.createRelationshipTo(node2, type);
+            tx.success();
+        }
+
     }
 }
