@@ -43,11 +43,11 @@ public class Main {
         //variantDatabase.addPatientNodes();
         variantDatabase.addSampleNodes();
         variantDatabase.loadVariantsIntoMemory();
-        variantDatabase.addVariants();
+        variantDatabase.addVariantsAndLinkSamples();
         //variantDatabase.addFunctionalAnnotations();
-        variantDatabase.linkSamplesToVariants();
 
         variantDatabase.shutdownDatabase();
+        vcfFileReader.close();
 
     }
 

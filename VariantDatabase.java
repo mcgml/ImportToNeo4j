@@ -146,6 +146,8 @@ public class VariantDatabase {
 
     public void loadVariantsIntoMemory(){
 
+        int n = 0;
+
         log.log(Level.INFO, "Loading variants into memory ...");
 
         Iterator<VariantContext> variantContextIterator = vcfFileReader.iterator();
@@ -153,11 +155,15 @@ public class VariantDatabase {
         //read VCF file
         while (variantContextIterator.hasNext()) {
             VariantContext variant = variantContextIterator.next();
+            n++;
+
+            if (n > 1000){
+                break;
+            }
 
             //skip hom-ref & filtered
             if (!variant.isFiltered() && variant.isVariant()){
                 variants.add(variant);
-
             }
 
         }
@@ -166,20 +172,21 @@ public class VariantDatabase {
     }
 
     //TODO partition by RunID
-    public void addVariants(){
+    public void addVariantsAndLinkSamples(){
 
-        log.log(Level.INFO, "Adding variants ...");
+        log.log(Level.INFO, "Adding variants and linking samples ...");
 
         //read VCF file
         for (VariantContext variant : variants){
+            Iterator<Genotype> genotypeIterator = variant.getGenotypes().iterator();
 
-            //loop over alleles
-            for (Allele allele : variant.getAlleles()){
+            while (genotypeIterator.hasNext()){
+                Genotype genotype = genotypeIterator.next();
 
-                //skip wildtype alleles
-                if (allele.isReference()) continue;
+                //skip wildtype or no calls
+                if (genotype.isNoCall() || genotype.isHomRef()) continue;
 
-                String variantLookup = variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString();
+                String variantLookup = variant.getContig() + ":" + variant.getStart() + genotype.getAllele(0).getBaseString() + ">" + genotype.getAllele(1).getBaseString();
                 ArrayList<Node> nodes = Neo4j.getNodes(graphDb, variantLabel, "VariantID", variantLookup);
 
                 if (nodes.size() == 0){
@@ -193,8 +200,8 @@ public class VariantDatabase {
                         node.setProperty("VariantID", variantLookup);
                         node.setProperty("Contig", variant.getContig());
                         node.setProperty("Position", variant.getStart());
-                        node.setProperty("Reference", variant.getReference().getBaseString());
-                        node.setProperty("Alternative", allele.getBaseString());
+                        node.setProperty("Reference", genotype.getAllele(0).getBaseString());
+                        node.setProperty("Alternative", genotype.getAllele(1).getBaseString());
 
                         //store node Id for later
                         variantNodeIds.put(variantLookup, node.getId());
@@ -207,6 +214,40 @@ public class VariantDatabase {
                     variantNodeIds.put(variantLookup, nodes.get(0).getId());
                 }
 
+                //Add het variant
+                if (genotype.isHet()){
+                    try (Transaction tx = graphDb.beginTx()) {
+
+                        Node node1 = graphDb.getNodeById(sampleNodeIds.get(genotype.getSampleName()));
+                        Node node2 = graphDb.getNodeById(variantNodeIds.get(variantLookup));
+
+                        Relationship relationship = node1.createRelationshipTo(node2, relTypes.HAS_HET_VARIANT);
+                        relationship.setProperty("GQ", genotype.getGQ());
+
+                        tx.success();
+                    }
+                }
+
+                //Add hom variant
+                if (genotype.isHet()){
+                    try (Transaction tx = graphDb.beginTx()) {
+
+                        Node node1 = graphDb.getNodeById(sampleNodeIds.get(genotype.getSampleName()));
+                        Node node2 = graphDb.getNodeById(variantNodeIds.get(variantLookup));
+
+                        Relationship relationship = node1.createRelationshipTo(node2, relTypes.HAS_HET_VARIANT);
+                        relationship.setProperty("GQ", genotype.getGQ());
+
+                        tx.success();
+                    }
+                }
+
+                //Add mixed variant
+                if (genotype.isHet()){
+                    System.err.println("mixed var");
+                    System.exit(1);
+                }
+
             }
 
         }
@@ -214,6 +255,7 @@ public class VariantDatabase {
     }
 
     //TODO use Ensembl v79 annotations, enable all VEP fields, add dbSNSFP
+    //todo check consistency between link samples
     public void addFunctionalAnnotations(){
 
         log.log(Level.INFO, "Adding functional annotations ...");
@@ -399,96 +441,7 @@ public class VariantDatabase {
 
     }
 
-    public void linkSamplesToVariants(){
-
-        //TODO minimal representation
-
-        log.log(Level.INFO, "Linking samples to variants ...");
-
-        Iterator<VariantContext> variantContextIterator = vcfFileReader.iterator();
-
-        //read VCF file
-        for (VariantContext variant : variants){
-
-            //loop over genotypes
-            Iterator<Genotype> genotypeIterator = variant.getGenotypes().iterator();
-
-            while (genotypeIterator.hasNext()){
-                Genotype genotype = genotypeIterator.next();
-
-                //skip wildtype or no calls
-                if (genotype.isNoCall() || genotype.isHomRef()) continue;
-
-                //loop over alleles
-                for (Allele allele : genotype.getAlleles()){
-
-                    String variantLookup = variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + allele.getBaseString();
-
-                    //skip wildtype alleles
-                    if (allele.isReference()) continue;
-
-                    System.out.println(genotype.getSampleName() + "\t" + allele.getBaseString());
-
-                    //make HET relationship
-                    if (genotype.isHet()) {
-                        try (Transaction tx = graphDb.beginTx()) {
-
-                            Node node1 = graphDb.getNodeById(sampleNodeIds.get(genotype.getSampleName()));
-                            Node node2 = graphDb.getNodeById(variantNodeIds.get(variantLookup));
-
-                            Relationship relationship = node1.createRelationshipTo(node2, relTypes.HAS_HET_VARIANT);
-                            relationship.setProperty("GQ", genotype.getGQ());
-
-                            tx.success();
-                        }
-                    }
-
-                    //make HETNONREF relationship
-                    if (genotype.isHetNonRef()) {
-                        try (Transaction tx = graphDb.beginTx()) {
-
-                            Node node1 = graphDb.getNodeById(sampleNodeIds.get(genotype.getSampleName()));
-                            Node node2 = graphDb.getNodeById(variantNodeIds.get(variantLookup));
-
-                            Relationship relationship = node1.createRelationshipTo(node2, relTypes.HAS_HETNONREF_VARIANT);
-                            relationship.setProperty("GQ", genotype.getGQ());
-
-                            tx.success();
-                        }
-                    }
-
-                    //make HOMVAR relationship
-                    if (genotype.isHomVar()) {
-                        try (Transaction tx = graphDb.beginTx()) {
-
-                            Node node1 = graphDb.getNodeById(sampleNodeIds.get(genotype.getSampleName()));
-                            Node node2 = graphDb.getNodeById(variantNodeIds.get(variantLookup));
-
-                            Relationship relationship = node1.createRelationshipTo(node2, relTypes.HAS_HOMVAR_VARIANT);
-                            relationship.setProperty("GQ", genotype.getGQ());
-
-                            tx.success();
-                        }
-                    }
-
-                    //make MIXED relationship
-                    if (genotype.isMixed()) {
-                        try (Transaction tx = graphDb.beginTx()) {
-
-                            Node node1 = graphDb.getNodeById(sampleNodeIds.get(genotype.getSampleName()));
-                            Node node2 = graphDb.getNodeById(variantNodeIds.get(variantLookup));
-
-                            Relationship relationship = node1.createRelationshipTo(node2, relTypes.HAS_MIXED_VARIANT);
-                            relationship.setProperty("GQ", genotype.getGQ());
-
-                            tx.success();
-                        }
-                    }
-
-                }
-            }
-
-        }
+    private static void convertToMinimalRepresentation(){
 
     }
 
