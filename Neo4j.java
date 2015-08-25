@@ -59,6 +59,8 @@ public class Neo4j{
     }
     public static void createConstraint(final GraphDatabaseService graphDb, final Label label, final String property) {
 
+        //TODO check constraint does not already exist
+
         try ( Transaction tx = graphDb.beginTx() )
         {
             graphDb.schema()
@@ -172,22 +174,21 @@ public class Neo4j{
         }
 
     }
-    public static void executeCypherQuery(final GraphDatabaseService graphDb, String cypherCommand){
-        //TODO check
-        try (Transaction ignored = graphDb.beginTx();
-             Result result = graphDb.execute( cypherCommand ) ) {
+    public static ArrayList<Map<String, Object>> runCypherQuery(final GraphDatabaseService graphDb, String cypherQuery){
 
-            /*while ( result.hasNext() )
+        ArrayList<Map<String, Object>> results = new ArrayList<>();
+
+        try ( Transaction ignored = graphDb.beginTx();
+              Result result = graphDb.execute( cypherQuery ) )
+        {
+            while ( result.hasNext() )
             {
-                Map<String,Object> row = result.next();
-                for ( Map.Entry<String,Object> column : row.entrySet() )
-                {
-                    rows += column.getKey() + ": " + column.getValue() + "; ";
-                }
-                rows += "\n";
-            }*/
-
+                results.add(result.next());
+            }
         }
+
+        return results;
+
     }
     public static void createRelationship(final GraphDatabaseService graphDb, Long nodeId1, Long nodeId2, RelationshipType type){
 
