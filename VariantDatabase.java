@@ -36,6 +36,7 @@ public class VariantDatabase {
     private HashMap<String, Long> geneNodeIds = new HashMap<>(); //GeneID:NodeID
     private HashMap<String, Long> featureNodeIds = new HashMap<>(); //Feature:NodeID
     private HashMap<String, HashSet<VEPAnnotation>> functionalAnnotations = new HashMap<>(); //variant:@annotation
+    private final int minimumGenotypeQuality = 30;
 
     public VariantDatabase(VCFFileReader vcfFileReader, File neo4jDBPath){
         this.vcfFileReader = vcfFileReader;
@@ -110,30 +111,19 @@ public class VariantDatabase {
 
     public void loadVCF() throws InvalidPropertiesFormatException {
 
-        int n = 0;
-        String variantLookup = "";
-
         log.log(Level.INFO, "Loading VCF into memory ...");
-
         Iterator<VariantContext> variantContextIterator = vcfFileReader.iterator();
+
+        String variantLookup = "";
 
         //read VCF file
         while (variantContextIterator.hasNext()) {
-
-            n++;
-
-            if (n > 250){
-                break;
-            }
-
             VariantContext variant = variantContextIterator.next();
 
             //skip hom-ref & filtered
             if (variant.isFiltered() || !variant.isVariant()){
                 continue;
             }
-
-            System.out.println(variant.getReference() + "\t" + variant.getAlternateAlleles().toString());
 
             //bank variants
             variants.add(variant);
@@ -144,20 +134,21 @@ public class VariantDatabase {
             while (genotypeIterator.hasNext()) {
                 Genotype genotype = genotypeIterator.next();
 
-                boolean hasAnnotation = false;
-
                 //skip wildtype or no calls
-                if (genotype.isNoCall() || genotype.isHomRef()){
+                if (genotype.isNoCall() || genotype.isHomRef() || genotype.getGQ() < minimumGenotypeQuality){
                     continue;
                 }
-                if (genotype.getPloidy() != 2) {
+                if (genotype.getPloidy() != 2 || genotype.getAlleles().size() != 2) {
                     throw new InvalidPropertiesFormatException("Allele " + genotype.getAlleles().toString() + " is not diploid");
                 }
 
-                if(genotype.isHom()){
-                    variantLookup = variant.getContig() + ":" + variant.getStart() + variant.getReference().getBaseString() + ">" + genotype.getAllele(1).getBaseString();
-                } else{
-                    variantLookup = variant.getContig() + ":" + variant.getStart() + genotype.getAllele(0).getBaseString() + ">" + genotype.getAllele(1).getBaseString();
+                if (variant.isSNP()){
+                    //if (genotype.isHomVar()) System.out.println(variant.getReference().getBaseString() + "\t" + genotype.getAlleles().get(1).getBaseString() + "\t" + genotype.getType() + "\t" + genotype.getGQ());
+                    if (genotype.is()) System.out.println(variant.getReference().getBaseString() + "\t" + genotype.getAlleles().get(1).getBaseString() + "\t" + genotype.getType() + "\t" + genotype.getGQ());
+                } else if (variant.isIndel()){
+                    continue;
+                } else {
+                    //throw new InvalidPropertiesFormatException("Variant not SNP or Indel " + variant.toString());
                 }
 
                 //initalise hash
@@ -190,10 +181,8 @@ public class VariantDatabase {
                             functionalAnnotations.get(variantLookup).add(vepAnnotation);
                         }
                     } else {
-                        throw new InvalidPropertiesFormatException("Not sure what is variant is: " + variantLookup);
+                        //throw new InvalidPropertiesFormatException("Not sure what is variant is: " + variantLookup);
                     }
-
-                    hasAnnotation = true;
 
                 } catch (ClassCastException e) {
 
@@ -222,18 +211,11 @@ public class VariantDatabase {
                                 functionalAnnotations.get(variantLookup).add(vepAnnotation);
                             }
                         } else {
-                            throw new InvalidPropertiesFormatException("Not sure what is variant is: " + variantLookup);
+                            //throw new InvalidPropertiesFormatException("Not sure what is variant is: " + variantLookup);
                         }
-
-                        hasAnnotation = true;
 
                     }
 
-                }
-
-                //register missing alleles
-                if (!hasAnnotation) {
-                    log.log(Level.WARNING, "Missing annotation for: " + variantLookup); //TODO mop up and discprepent vars
                 }
 
             }
@@ -697,8 +679,8 @@ public class VariantDatabase {
 
     }
 
-    private static void convertToMinimalRepresentation(){
-        //TODO
+    private static void convertToMinimalRepresentation(String contig, int pos, String ref, String alt){
+
     }
 
     private static ArrayList<Node> getAnnotationsForVariant(String variantLookup, final GraphDatabaseService graphDb){

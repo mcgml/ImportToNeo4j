@@ -1,7 +1,5 @@
 package nhs.genetics.cardiff;
 
-import htsjdk.tribble.AbstractFeatureReader;
-import htsjdk.variant.vcf.VCFCodec;
 import htsjdk.variant.vcf.VCFFileReader;
 import org.neo4j.io.fs.FileUtils;
 
@@ -28,14 +26,6 @@ public class Main {
 
         //create VCF file parser
         VCFFileReader vcfFileReader = new VCFFileReader(new File(args[0]), new File(args[0] + ".idx"));
-        VCFCodec codec = new VCFCodec();
-
-        try (AbstractFeatureReader reader = AbstractFeatureReader.getFeatureReader(args[0], codec)){
-            Iterable<VCF> iter = reader.iterator();
-
-        } catch (IOException e){
-            e.printStackTrace();
-        }
 
         //create database object
         VariantDatabase variantDatabase = new VariantDatabase(vcfFileReader, new File(args[1]));
@@ -54,7 +44,7 @@ public class Main {
 
         variantDatabase.loadVCF();
 
-        variantDatabase.addPatientNodes();
+        /*variantDatabase.addPatientNodes();
         variantDatabase.addSampleNodes();
         variantDatabase.addVariantsNodes();
         variantDatabase.addGenotypeRelationships();
@@ -63,7 +53,7 @@ public class Main {
         variantDatabase.addFunctionalAnnotationNodes();
         variantDatabase.addConsequenceRelationships();
         variantDatabase.addInFeatureRelationships();
-        variantDatabase.addInSymbolRelationships();
+        variantDatabase.addInSymbolRelationships();*/
 
         variantDatabase.shutdownDatabase();
         vcfFileReader.close();
