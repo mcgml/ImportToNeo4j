@@ -112,8 +112,6 @@ public class VariantDatabase {
     public void loadVCFFile(){
         log.log(Level.INFO, "Loading VCF into memory ...");
 
-        int n = 0;
-
         String variantLookup;
         Iterator<VariantContext> variantContextIterator = variantVcfFileReader.iterator();
 
@@ -124,9 +122,6 @@ public class VariantDatabase {
             if (variant.isFiltered() || !variant.isVariant()){
                 continue;
             }
-
-            if (n > 2000) break;
-            ++n;
 
             variants.add(variant);
 
