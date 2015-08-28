@@ -49,11 +49,10 @@ public class Main {
         if (overwriteDB) variantDatabase.createIndexes();
 
         variantDatabase.loadVCFFile();
+
         variantDatabase.addPatientNodes();
         variantDatabase.addSampleNodes();
-        variantDatabase.extractVepAnnotations();
         variantDatabase.addVariantNodesAndGenotypeRelationships();
-        variantDatabase.addPopulationFrequencies();
         variantDatabase.addSymbolNodes();
         variantDatabase.addFeatureNodes();
         variantDatabase.addFunctionalAnnotationNodes();

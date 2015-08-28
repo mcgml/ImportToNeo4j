@@ -1,5 +1,6 @@
 package nhs.genetics.cardiff;
 
+import com.sun.jdi.AbsentInformationException;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.graphdb.schema.Schema;
@@ -83,18 +84,22 @@ public class Neo4j{
         }
 
     }
-    public static void addNode(final GraphDatabaseService graphDb, final Label label, HashMap<String, Object> properties){
+    public static Node addNode(final GraphDatabaseService graphDb, final Label label, HashMap<String, Object> properties){
+
+        Node node;
 
         try ( Transaction tx = graphDb.beginTx() )
         {
-            Node userNode = graphDb.createNode( label );
+            node = graphDb.createNode( label );
 
-            for(Map.Entry<String, Object> property : properties.entrySet()){
-                userNode.setProperty(property.getKey(), property.getValue());
+            for (Map.Entry<String, Object> property : properties.entrySet()){
+                node.setProperty(property.getKey(), property.getValue());
             }
 
             tx.success();
         }
+
+        return node;
 
     }
     public static ArrayList<Node> getNodes(final GraphDatabaseService graphDb, final Label label, final String field, final Object value){
@@ -139,6 +144,20 @@ public class Neo4j{
 
         return nodeIDs;
     }
+    public static Node matchOrCreateUniqueNode(final GraphDatabaseService graphDb, Label label, String field, Object value) throws InvalidPropertiesFormatException{
+        ArrayList<Node> nodes = getNodes(graphDb, label, field, value);
+
+        if (nodes.size() == 1){
+            return nodes.get(0);
+        } else if (nodes.size() > 1){
+            throw new InvalidPropertiesFormatException("Multiple nodes already exists for: " + label.name() + " " + field + " " + value);
+        }
+
+        HashMap<String, Object> props = new HashMap<>();
+        props.put(field, value);
+
+        return addNode(graphDb, label, props);
+    }
     public static ArrayList<Map<String, Object>> runCypherQuery(final GraphDatabaseService graphDb, String cypherQuery){
         ArrayList<Map<String, Object>> results = new ArrayList<>();
 
@@ -155,12 +174,9 @@ public class Neo4j{
 
         return results;
     }
-    public static void createRelationship(final GraphDatabaseService graphDb, Long nodeId1, Long nodeId2, RelationshipType type, HashMap<String, Object> properties){
+    public static void createRelationship(final GraphDatabaseService graphDb, Node node1, Node node2, RelationshipType type, HashMap<String, Object> properties){
 
         try (Transaction tx = graphDb.beginTx()) {
-
-            Node node1 = graphDb.getNodeById(nodeId1);
-            Node node2 = graphDb.getNodeById(nodeId2);
 
             Relationship relationship = node1.createRelationshipTo(node2, type);
 
@@ -173,11 +189,9 @@ public class Neo4j{
         }
 
     }
-    public static void addNodeProperty(final GraphDatabaseService graphDb, Long nodeId, HashMap<String, Object> properties){
+    public static void addNodeProperty(final GraphDatabaseService graphDb, Node node, HashMap<String, Object> properties){
 
         try (Transaction tx = graphDb.beginTx()) {
-
-            Node node = graphDb.getNodeById(nodeId);
 
             //set properties
             for (Map.Entry<String, Object> property : properties.entrySet()){
@@ -188,11 +202,9 @@ public class Neo4j{
         }
 
     }
-    public static void addNodeLabel(final GraphDatabaseService graphDb, Long nodeId, Label label){
+    public static void addNodeLabel(final GraphDatabaseService graphDb, Node node, Label label){
 
         try (Transaction tx = graphDb.beginTx()) {
-
-            Node node = graphDb.getNodeById(nodeId);
 
             //add label
             node.addLabel(label);
@@ -201,42 +213,27 @@ public class Neo4j{
         }
 
     }
-    public static long matchOrCreateUniqueNode(final GraphDatabaseService graphDb, final Label label, final String field, final Object value) throws InvalidPropertiesFormatException{
+    public static ArrayList<Node> findNeighbourNodes(final GraphDatabaseService graphDb, Node startNode, Label endLabel, Direction direction){
 
+        Node tempNode;
         ArrayList<Node> nodes = new ArrayList<>();
 
-        //check if node exists
-        try ( Transaction tx = graphDb.beginTx() )
-        {
-            try ( ResourceIterator<Node> users = graphDb.findNodes( label, field, value ) )
-            {
+        try ( Transaction tx = graphDb.beginTx() ){
 
-                while ( users.hasNext() )
-                {
-                    nodes.add( users.next() );
+            for (Relationship relationship : startNode.getRelationships(direction)){
+
+                //get connecting node
+                tempNode = relationship.getOtherNode(startNode);
+
+                //check node has required label
+                if (tempNode.hasLabel(endLabel)){
+                    nodes.add(tempNode);
                 }
 
             }
 
         }
 
-        //add node
-        if (nodes.size() == 0){
-            try ( Transaction tx = graphDb.beginTx() )
-            {
-                Node userNode = graphDb.createNode( label );
-                userNode.setProperty(field, value);
-                nodes.add(userNode);
-
-                tx.success();
-            }
-        }
-
-        if (nodes.size() > 1){
-            throw new InvalidPropertiesFormatException("Multiple nodes were present in DB for: " + label.name() + " " + field + " " + value);
-        }
-
-        return nodes.get(0).getId();
+        return nodes;
     }
-
 }
