@@ -4,9 +4,7 @@ import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.graphdb.schema.Schema;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class Neo4j{
@@ -59,8 +57,6 @@ public class Neo4j{
     }
     public static void createConstraint(final GraphDatabaseService graphDb, final Label label, final String property) {
 
-        //TODO check constraint does not already exist
-
         try ( Transaction tx = graphDb.beginTx() )
         {
             graphDb.schema()
@@ -87,26 +83,17 @@ public class Neo4j{
         }
 
     }
-    public static void addNode(final GraphDatabaseService graphDb, final Label label, final String field, final Object value){
+    public static void addNode(final GraphDatabaseService graphDb, final Label label, HashMap<String, Object> properties){
 
         try ( Transaction tx = graphDb.beginTx() )
         {
             Node userNode = graphDb.createNode( label );
-            userNode.setProperty(field, value);
+
+            for(Map.Entry<String, Object> property : properties.entrySet()){
+                userNode.setProperty(property.getKey(), property.getValue());
+            }
 
             tx.success();
-        }
-
-    }
-    public static boolean hasNode(final GraphDatabaseService graphDb, final Label label, final String field, final Object value){
-
-        try ( Transaction tx = graphDb.beginTx() )
-        {
-            if (graphDb.findNode(label, field, value) == null){
-                return false;
-            } else {
-                return true;
-            }
         }
 
     }
@@ -152,45 +139,23 @@ public class Neo4j{
 
         return nodeIDs;
     }
-    public static Node getUniqueMergedNode(final GraphDatabaseService graphDb, final Label label, final String field, final Object value){
-
-        Node result = null;
-        ResourceIterator<Node> resultIterator = null;
-        try ( Transaction tx = graphDb.beginTx() )
-        {
-            HashMap<String, Object> parameters = new HashMap<>();
-
-            String queryString = "MERGE (n:label {field: {value}}) RETURN n";
-            parameters.put( "label", label.name() );
-            parameters.put( "field", field );
-            parameters.put( "value", value );
-
-            resultIterator = graphDb.execute( queryString, parameters ).columnAs( "n" );
-            result = resultIterator.next();
-
-            tx.success();
-
-            return result;
-        }
-
-    }
     public static ArrayList<Map<String, Object>> runCypherQuery(final GraphDatabaseService graphDb, String cypherQuery){
-
         ArrayList<Map<String, Object>> results = new ArrayList<>();
 
-        try ( Transaction ignored = graphDb.beginTx();
+        try ( Transaction tx = graphDb.beginTx();
               Result result = graphDb.execute( cypherQuery ) )
         {
             while ( result.hasNext() )
             {
                 results.add(result.next());
             }
+
+            tx.success();
         }
 
         return results;
-
     }
-    public static void createRelationship(final GraphDatabaseService graphDb, Long nodeId1, Long nodeId2, RelationshipType type){
+    public static void createRelationship(final GraphDatabaseService graphDb, Long nodeId1, Long nodeId2, RelationshipType type, HashMap<String, Object> properties){
 
         try (Transaction tx = graphDb.beginTx()) {
 
@@ -198,8 +163,80 @@ public class Neo4j{
             Node node2 = graphDb.getNodeById(nodeId2);
 
             Relationship relationship = node1.createRelationshipTo(node2, type);
+
+            //set properties
+            for (Map.Entry<String, Object> property : properties.entrySet()){
+                relationship.setProperty(property.getKey(), property.getValue());
+            }
+
             tx.success();
         }
 
     }
+    public static void addNodeProperty(final GraphDatabaseService graphDb, Long nodeId, HashMap<String, Object> properties){
+
+        try (Transaction tx = graphDb.beginTx()) {
+
+            Node node = graphDb.getNodeById(nodeId);
+
+            //set properties
+            for (Map.Entry<String, Object> property : properties.entrySet()){
+                node.setProperty(property.getKey(), property.getValue());
+            }
+
+            tx.success();
+        }
+
+    }
+    public static void addNodeLabel(final GraphDatabaseService graphDb, Long nodeId, Label label){
+
+        try (Transaction tx = graphDb.beginTx()) {
+
+            Node node = graphDb.getNodeById(nodeId);
+
+            //add label
+            node.addLabel(label);
+
+            tx.success();
+        }
+
+    }
+    public static long matchOrCreateUniqueNode(final GraphDatabaseService graphDb, final Label label, final String field, final Object value) throws InvalidPropertiesFormatException{
+
+        ArrayList<Node> nodes = new ArrayList<>();
+
+        //check if node exists
+        try ( Transaction tx = graphDb.beginTx() )
+        {
+            try ( ResourceIterator<Node> users = graphDb.findNodes( label, field, value ) )
+            {
+
+                while ( users.hasNext() )
+                {
+                    nodes.add( users.next() );
+                }
+
+            }
+
+        }
+
+        //add node
+        if (nodes.size() == 0){
+            try ( Transaction tx = graphDb.beginTx() )
+            {
+                Node userNode = graphDb.createNode( label );
+                userNode.setProperty(field, value);
+                nodes.add(userNode);
+
+                tx.success();
+            }
+        }
+
+        if (nodes.size() > 1){
+            throw new InvalidPropertiesFormatException("Multiple nodes were present in DB for: " + label.name() + " " + field + " " + value);
+        }
+
+        return nodes.get(0).getId();
+    }
+
 }

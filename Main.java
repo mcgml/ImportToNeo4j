@@ -16,47 +16,55 @@ public class Main {
 
     public static void main(String[] args) throws InvalidPropertiesFormatException {
 
-        if (args.length != 2) {
-            System.err.println("Usage: <VEPAnnotatedVCFFile> <Neo4jDBPath>");
+        if (args.length != 4) {
+            System.err.println("Usage: <VEPAnnotatedVCFFile> <1kgP3VCFFile> <Neo4jDBPath> <Overwrite>");
             System.exit(1);
         }
 
         log.log(Level.INFO, "ImportToNeo4j v" + version);
-        log.log(Level.INFO, "Importing " + args[0] + " to " + args[1]);
+        log.log(Level.INFO, "Importing " + args[0] + " to " + args[2]);
 
         //create VCF file parser
-        VCFFileReader vcfFileReader = new VCFFileReader(new File(args[0]), new File(args[0] + ".idx"));
+        VCFFileReader variantVcfFileReader = new VCFFileReader(new File(args[0]), new File(args[0] + ".idx"));
+        VCFFileReader oneKgP3VcfFileReader = new VCFFileReader(new File(args[1]), new File(args[1] + ".idx"));
 
         //create database object
-        VariantDatabase variantDatabase = new VariantDatabase(vcfFileReader, new File(args[1]));
+        VariantDatabase variantDatabase = new VariantDatabase(variantVcfFileReader, oneKgP3VcfFileReader, new File(args[2]));
+
+        //update or overwrite
+        boolean overwriteDB = Boolean.parseBoolean(args[3]);
 
         //delete existing DB
-        try{
-            FileUtils.deleteRecursively(new File(args[1]));
-        } catch (IOException e){
-            log.log(Level.SEVERE, "Could not delete database: " + e.getMessage());
-            System.exit(1);
+        if (overwriteDB) {
+            try{
+                FileUtils.deleteRecursively(new File(args[2]));
+            } catch (IOException e){
+                log.log(Level.SEVERE, "Could not delete database: " + e.getMessage());
+                System.exit(1);
+            }
         }
 
         //create new DB
-        variantDatabase.createDatabase();
-        variantDatabase.createIndexes();
+        variantDatabase.startDatabase();
+        if (overwriteDB) variantDatabase.createIndexes();
 
-        variantDatabase.loadVCF();
-
-        /*variantDatabase.addPatientNodes();
+        variantDatabase.loadVCFFile();
+        variantDatabase.addPatientNodes();
         variantDatabase.addSampleNodes();
-        variantDatabase.addVariantsNodes();
-        variantDatabase.addGenotypeRelationships();
+        variantDatabase.extractVepAnnotations();
+        variantDatabase.addVariantNodesAndGenotypeRelationships();
+        variantDatabase.addPopulationFrequencies();
         variantDatabase.addSymbolNodes();
         variantDatabase.addFeatureNodes();
         variantDatabase.addFunctionalAnnotationNodes();
         variantDatabase.addConsequenceRelationships();
         variantDatabase.addInFeatureRelationships();
-        variantDatabase.addInSymbolRelationships();*/
+        variantDatabase.addInSymbolRelationships();
 
         variantDatabase.shutdownDatabase();
-        vcfFileReader.close();
+
+        variantVcfFileReader.close();
+        oneKgP3VcfFileReader.close();
 
     }
 
