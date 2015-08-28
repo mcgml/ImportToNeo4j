@@ -1,6 +1,5 @@
 package nhs.genetics.cardiff;
 
-import com.sun.jdi.AbsentInformationException;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.graphdb.schema.Schema;
@@ -174,8 +173,15 @@ public class Neo4j{
 
         return results;
     }
-    public static void createRelationship(final GraphDatabaseService graphDb, Node node1, Node node2, RelationshipType type, HashMap<String, Object> properties){
+    public static void createRelationship(final GraphDatabaseService graphDb, Node node1, Node node2, RelationshipType type, HashMap<String, Object> properties, boolean checkDuplicates){
 
+        if (!checkDuplicates){
+            if (hasRelationship(graphDb, node1, node2, type, Direction.OUTGOING)){
+                return;
+            }
+        }
+
+        //add relationship
         try (Transaction tx = graphDb.beginTx()) {
 
             Relationship relationship = node1.createRelationshipTo(node2, type);
@@ -188,6 +194,23 @@ public class Neo4j{
             tx.success();
         }
 
+    }
+    public static boolean hasRelationship(final GraphDatabaseService graphDb, Node node1, Node node2, RelationshipType type, Direction direction){
+
+        //check if relationship already exists
+        try ( Transaction tx = graphDb.beginTx() ){
+
+            for (Relationship relationship : node1.getRelationships(type, direction)){
+
+                if (relationship.getOtherNode(node1).equals(node2)){
+                    return true;
+                }
+
+            }
+
+        }
+
+        return false;
     }
     public static void addNodeProperty(final GraphDatabaseService graphDb, Node node, HashMap<String, Object> properties){
 
