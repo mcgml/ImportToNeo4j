@@ -14,6 +14,9 @@ import java.util.logging.Logger;
 /**
  * Created by ml on 23/06/15.
  */
+
+//NB - assumption = if variant exists in DB so do the annotations
+
 public class VariantDatabase {
 
     private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());
@@ -21,14 +24,14 @@ public class VariantDatabase {
     private File neo4jDBPath;
     private GraphDatabaseService graphDb;
     private VCFFileReader variantVcfFileReader, oneKgP3VcfFileReader;
-    private ArrayList<VariantContext> variants = new ArrayList<>();
-    private HashMap<String, HashSet<VEPAnnotation>> vepAnnotations = new HashMap<>();
-    private HashMap<GenomeVariant, Node> variantNodes = new HashMap<>();
-    private HashMap<String, Node> patientNodes = new HashMap<>();
-    private HashMap<String, Node> sampleNodes = new HashMap<>();
-    private HashMap<GenomeVariant, HashMap<String, Node>> annotationNodes = new HashMap<>();
-    private HashMap<String, Node> symbolNodes = new HashMap<>();
-    private HashMap<String, Node> featureNodes = new HashMap<>();
+    private ArrayList<VariantContext> vcfBody = new ArrayList<>(); //VCF file body
+    private HashMap<String, HashSet<VEPAnnotation>> vepAnnotations = new HashMap<>(); //all VEP annotations
+    private HashMap<GenomeVariant, Node> newVariantNodes = new HashMap<>(); //new variants added during this session
+    private HashMap<String, Node> patientNodes = new HashMap<>(); //patients added during this session
+    private HashMap<String, Node> sampleNodes = new HashMap<>(); //samples added during this session
+    private HashMap<GenomeVariant, HashMap<String, Node>> annotationNodes = new HashMap<>(); //
+    private HashMap<String, Node> symbolNodes = new HashMap<>(); //symbols added during this session
+    private HashMap<String, Node> featureNodes = new HashMap<>(); //features added during this session
     private String libraryId = "150716_D00501_0047_BHB092ADXX";
 
     private Label patientLabel = DynamicLabel.label("Patient");
@@ -112,6 +115,8 @@ public class VariantDatabase {
     public void loadVCFFile(){
         log.log(Level.INFO, "Loading VCF into memory ...");
 
+        int n = 0;
+
         String variantLookup;
         Iterator<VariantContext> variantContextIterator = variantVcfFileReader.iterator();
 
@@ -123,7 +128,10 @@ public class VariantDatabase {
                 continue;
             }
 
-            variants.add(variant);
+            ++n;
+            //if(n > 500) continue;
+
+            vcfBody.add(variant);
 
             //split annotations and make unique
             try {
@@ -180,6 +188,8 @@ public class VariantDatabase {
     public void addSampleNodes() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding sample nodes ...");
 
+        //TODO add sample type
+
         for (String sampleId : variantVcfFileReader.getFileHeader().getSampleNamesInOrder()){
             sampleNodes.put(sampleId, Neo4j.matchOrCreateUniqueNode(graphDb, sampleLabel, "SampleId", sampleId));
         }
@@ -191,10 +201,10 @@ public class VariantDatabase {
         GenomeVariant genomeVariant;
 
         //read VCF records
-        for (VariantContext variant : variants) {
-            Iterator<Genotype> genotypeIterator = variant.getGenotypes().iterator();
+        for (VariantContext vcfRecord : vcfBody) {
+            Iterator<Genotype> genotypeIterator = vcfRecord.getGenotypes().iterator();
 
-            if (!variant.isVariant()) continue;
+            if (!vcfRecord.isVariant()) continue;
 
             while (genotypeIterator.hasNext()) {
                 Genotype genotype = genotypeIterator.next();
@@ -205,34 +215,34 @@ public class VariantDatabase {
 
                 if (genotype.isHomVar()) {
 
-                    genomeVariant = new GenomeVariant(variant.getContig(), variant.getStart(), variant.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
+                    genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
                     genomeVariant.convertToMinimalRepresentation();
 
-                    addVariantNodesAndGenotypeRelationshipsHelper(sampleNodes.get(genotype.getSampleName()), genomeVariant, genotype.getGQ(), relTypes.HAS_HOM_VARIANT, variant.getID());
+                    addVariantNodesAndGenotypeRelationshipsHelper(sampleNodes.get(genotype.getSampleName()), genomeVariant, genotype.getGQ(), relTypes.HAS_HOM_VARIANT, vcfRecord.getID());
 
                 } else if (genotype.isHetNonRef()) {
 
                     //het variant1
-                    genomeVariant = new GenomeVariant(variant.getContig(), variant.getStart(), variant.getReference().getBaseString(), genotype.getAlleles().get(0).getBaseString());
+                    genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(0).getBaseString());
                     genomeVariant.convertToMinimalRepresentation();
 
-                    addVariantNodesAndGenotypeRelationshipsHelper(sampleNodes.get(genotype.getSampleName()), genomeVariant, genotype.getGQ(), relTypes.HAS_HET_VARIANT, variant.getID());
+                    addVariantNodesAndGenotypeRelationshipsHelper(sampleNodes.get(genotype.getSampleName()), genomeVariant, genotype.getGQ(), relTypes.HAS_HET_VARIANT, vcfRecord.getID());
 
                     //het variant2
-                    genomeVariant = new GenomeVariant(variant.getContig(), variant.getStart(), variant.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
+                    genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
                     genomeVariant.convertToMinimalRepresentation();
 
-                    addVariantNodesAndGenotypeRelationshipsHelper(sampleNodes.get(genotype.getSampleName()), genomeVariant, genotype.getGQ(), relTypes.HAS_HET_VARIANT, variant.getID());
+                    addVariantNodesAndGenotypeRelationshipsHelper(sampleNodes.get(genotype.getSampleName()), genomeVariant, genotype.getGQ(), relTypes.HAS_HET_VARIANT, vcfRecord.getID());
 
                 } else if (genotype.isHet()) {
 
-                    genomeVariant = new GenomeVariant(variant.getContig(), variant.getStart(), variant.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
+                    genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
                     genomeVariant.convertToMinimalRepresentation();
 
-                    addVariantNodesAndGenotypeRelationshipsHelper(sampleNodes.get(genotype.getSampleName()), genomeVariant, genotype.getGQ(), relTypes.HAS_HET_VARIANT, variant.getID());
+                    addVariantNodesAndGenotypeRelationshipsHelper(sampleNodes.get(genotype.getSampleName()), genomeVariant, genotype.getGQ(), relTypes.HAS_HET_VARIANT, vcfRecord.getID());
 
                 } else {
-                    throw new InvalidPropertiesFormatException("Zygosity unknown: " + variant.toString());
+                    throw new InvalidPropertiesFormatException("Zygosity unknown: " + vcfRecord.toString());
                 }
 
             }
@@ -243,12 +253,17 @@ public class VariantDatabase {
     public void addSymbolNodes() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding symbols ...");
 
-        for (Map.Entry<String, HashSet<VEPAnnotation>> variant : vepAnnotations.entrySet()){
-            for (VEPAnnotation annotation : variant.getValue()){
+        //loop over new variants
+        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) {
+            if (vepAnnotations.containsKey(variant.getKey().getVEPVariant())) {
 
-                //skip symbols already imported during this session
-                if (!symbolNodes.containsKey(annotation.getSymbol())){
-                    symbolNodes.put(annotation.getSymbol(), Neo4j.matchOrCreateUniqueNode(graphDb, symbolLabel, "SymbolId", annotation.getSymbol()));
+                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey().getVEPVariant())){
+
+                    //skip symbols already imported during this session
+                    if (!symbolNodes.containsKey(annotation.getSymbol())){
+                        symbolNodes.put(annotation.getSymbol(), Neo4j.matchOrCreateUniqueNode(graphDb, symbolLabel, "SymbolId", annotation.getSymbol()));
+                    }
+
                 }
 
             }
@@ -258,44 +273,49 @@ public class VariantDatabase {
     public void addFeatureNodes() {
         log.log(Level.INFO, "Adding features ...");
 
-        for (Map.Entry<String, HashSet<VEPAnnotation>> variant : vepAnnotations.entrySet()){
-            for (VEPAnnotation annotation : variant.getValue()){
+        //loop over new variants
+        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) {
+            if (vepAnnotations.containsKey(variant.getKey().getVEPVariant())) {
 
-                //skip features already imported during this session
-                if (!featureNodes.containsKey(annotation.getFeature())){
+                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey().getVEPVariant())){
 
-                    ArrayList<Node> nodes = Neo4j.getNodes(graphDb, featureLabel, "FeatureId", annotation.getFeature());
+                    //skip features already imported during this session
+                    if (!featureNodes.containsKey(annotation.getFeature())){
 
-                    if (nodes.size() == 0) {
+                        ArrayList<Node> nodes = Neo4j.getNodes(graphDb, featureLabel, "FeatureId", annotation.getFeature());
 
-                        try (Transaction tx = graphDb.beginTx()) {
+                        if (nodes.size() == 0) {
 
-                            Node node = graphDb.createNode();
-                            node.addLabel(featureLabel);
+                            try (Transaction tx = graphDb.beginTx()) {
 
-                            node.setProperty("FeatureId", annotation.getFeature());
-                            if (annotation.getFeatureType() != null) node.setProperty("FeatureType", annotation.getFeatureType());
-                            if (annotation.getBiotype() != null) node.setProperty("Biotype", annotation.getBiotype());
-                            if (annotation.getCanonical() != null && annotation.getCanonical().equals("YES")) node.addLabel(canonicalLabel);
-                            if (annotation.getStrand() != null) node.setProperty("Strand", annotation.getStrand());
+                                Node node = graphDb.createNode();
+                                node.addLabel(featureLabel);
 
-                            if(annotation.getExon() != null) {
-                                String[] fields = annotation.getExon().split("/");
-                                node.setProperty("TotalExons", fields[1]);
+                                node.setProperty("FeatureId", annotation.getFeature());
+                                if (annotation.getFeatureType() != null) node.setProperty("FeatureType", annotation.getFeatureType());
+                                if (annotation.getBiotype() != null) node.setProperty("Biotype", annotation.getBiotype());
+                                if (annotation.getCanonical() != null && annotation.getCanonical().equals("YES")) node.addLabel(canonicalLabel);
+                                if (annotation.getStrand() != null) node.setProperty("Strand", annotation.getStrand());
+
+                                if(annotation.getExon() != null) {
+                                    String[] fields = annotation.getExon().split("/");
+                                    node.setProperty("TotalExons", fields[1]);
+                                }
+
+                                if(annotation.getIntron() != null) {
+                                    String[] fields = annotation.getIntron().split("/");
+                                    node.setProperty("TotalIntrons", fields[1]);
+                                }
+
+                                featureNodes.put(annotation.getFeature(), node);
+
+                                tx.success();
                             }
 
-                            if(annotation.getIntron() != null) {
-                                String[] fields = annotation.getIntron().split("/");
-                                node.setProperty("TotalIntrons", fields[1]);
-                            }
-
-                            featureNodes.put(annotation.getFeature(), node);
-
-                            tx.success();
+                        } else {
+                            featureNodes.put(annotation.getFeature(), nodes.get(0));
                         }
 
-                    } else {
-                        featureNodes.put(annotation.getFeature(), nodes.get(0));
                     }
 
                 }
@@ -310,49 +330,44 @@ public class VariantDatabase {
         //TODO add more annotations
 
         //loop over variants
-        for (Map.Entry<GenomeVariant, Node> variant : variantNodes.entrySet()){
+        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()){
             if (vepAnnotations.containsKey(variant.getKey().getVEPVariant())){
 
-                if (Neo4j.findNeighbourNodes(graphDb, variant.getValue(), annotationLabel, Direction.OUTGOING).size() == 0){
+                //initialise hash
+                if (!annotationNodes.containsKey(variant.getKey())) annotationNodes.put(variant.getKey(), new HashMap<String, Node>());
 
-                    //initialise hash
-                    if (!annotationNodes.containsKey(variant.getKey())) {
-                        annotationNodes.put(variant.getKey(), new HashMap<String, Node>());
-                    }
+                //loop over functional annotations for this variant
+                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey().getVEPVariant())) {
 
-                    //loop over functional annotations for this variant
-                    for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey().getVEPVariant())) {
+                    try (Transaction tx = graphDb.beginTx()) {
 
-                        try (Transaction tx = graphDb.beginTx()) {
+                        Node node = graphDb.createNode();
+                        node.addLabel(annotationLabel);
 
-                            Node node = graphDb.createNode();
-                            node.addLabel(annotationLabel);
+                        if(annotation.getHgvsCoding() != null) node.setProperty("HGVSc", annotation.getHgvsCoding());
+                        if(annotation.getHgvsProtein() != null) node.setProperty("HGVSp", annotation.getHgvsProtein());
+                        if(annotation.getPolyphen() != null) node.setProperty("PolyPhen", annotation.getPolyphen());
+                        if(annotation.getSift() != null) node.setProperty("SIFT", annotation.getSift());
 
-                            if(annotation.getHgvsCoding() != null) node.setProperty("HGVSc", annotation.getHgvsCoding());
-                            if(annotation.getHgvsProtein() != null) node.setProperty("HGVSp", annotation.getHgvsProtein());
-                            if(annotation.getPolyphen() != null) node.setProperty("PolyPhen", annotation.getPolyphen());
-                            if(annotation.getSift() != null) node.setProperty("SIFT", annotation.getSift());
-
-                            if(annotation.getExon() != null) {
-                                String[] fields = annotation.getExon().split("/");
-                                node.setProperty("Exon", fields[0]);
-                            }
-
-                            if(annotation.getIntron() != null) {
-                                String[] fields = annotation.getIntron().split("/");
-                                node.setProperty("Intron", fields[0]);
-                            }
-
-                            annotationNodes.get(variant.getKey()).put(annotation.getFeature(), node);
-
-                            tx.success();
+                        if(annotation.getExon() != null) {
+                            String[] fields = annotation.getExon().split("/");
+                            node.setProperty("Exon", fields[0]);
                         }
 
+                        if(annotation.getIntron() != null) {
+                            String[] fields = annotation.getIntron().split("/");
+                            node.setProperty("Intron", fields[0]);
+                        }
+
+                        annotationNodes.get(variant.getKey()).put(annotation.getFeature(), node);
+
+                        tx.success();
                     }
+
                 }
 
             } else {
-                log.log(Level.WARNING, "No annotation for: " + variant.getKey().getConcatenatedVariant());
+                log.log(Level.FINE, "No annotation for: " + variant.getKey().getConcatenatedVariant());
             }
         }
 
@@ -361,7 +376,7 @@ public class VariantDatabase {
         log.log(Level.INFO, "Linking variants To functional annotations ...");
 
         //loop over variants
-        for (Map.Entry<GenomeVariant, Node> variant : variantNodes.entrySet()){
+        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()){
             if (vepAnnotations.containsKey(variant.getKey().getVEPVariant())){
 
                 HashMap<String, Object> properties = new HashMap<>();
@@ -369,41 +384,41 @@ public class VariantDatabase {
                 //loop over all annotations by for this allele
                 for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey().getVEPVariant())){
 
-                    if (annotation.getConsequences().contains("transcript_ablation")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TRANSCRIPT_ABLATION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("splice_acceptor_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_SPLICE_ACCEPTOR_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("splice_donor_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_SPLICE_DONOR_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("stop_gained")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_STOP_GAINED_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("frameshift_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_FRAMESHIFT_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("stop_lost")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_STOP_LOST_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("start_lost")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_START_LOST_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("transcript_amplification")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TRANSCRIPT_AMPLIFICATION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("inframe_insertion")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INFRAME_INSERTION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("inframe_deletion")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INFRAME_DELETION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("missense_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_MISSENSE_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("protein_altering_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_PROTEIN_ALTERING_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("splice_region_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_SPLICE_REGION_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("incomplete_terminal_codon_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INCOMPLETE_TERMINAL_CODON_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("stop_retained_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_STOP_RETAINED_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("synonymous_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_SYNONYMOUS_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("coding_sequence_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_CODING_SEQUENCE_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("mature_miRNA_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_MATURE_MIRNA_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("5_prime_UTR_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_5_PRIME_UTR_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("3_prime_UTR_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_3_PRIME_UTR_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("non_coding_transcript_exon_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_NON_CODING_TRANSCRIPT_EXON_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("intron_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INTRON_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("NMD_transcript_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_NMD_TRANSCRIPT_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("non_coding_transcript_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_NON_CODING_TRANSCRIPT_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("upstream_gene_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_UPSTREAM_GENE_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("downstream_gene_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_DOWNSTREAM_GENE_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("TFBS_ablation")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TFBS_ABLATION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("TFBS_amplification")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TFBS_AMPLIFICATION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("TF_binding_site_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TF_BINDING_SITE_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("regulatory_region_ablation")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_REGULATORY_REGION_ABLATION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("regulatory_region_amplification")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_REGULATORY_REGION_AMPLIFICATION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("feature_elongation")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_FEATURE_ELONGATION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("regulatory_region_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_REGULATORY_REGION_VARIANT_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("feature_truncation")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_FEATURE_TRUNCATION_CONSEQUENCE, properties, false);
-                    if (annotation.getConsequences().contains("intergenic_variant")) Neo4j.createRelationship(graphDb, variantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INTERGENIC_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("transcript_ablation")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TRANSCRIPT_ABLATION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("splice_acceptor_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_SPLICE_ACCEPTOR_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("splice_donor_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_SPLICE_DONOR_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("stop_gained")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_STOP_GAINED_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("frameshift_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_FRAMESHIFT_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("stop_lost")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_STOP_LOST_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("start_lost")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_START_LOST_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("transcript_amplification")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TRANSCRIPT_AMPLIFICATION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("inframe_insertion")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INFRAME_INSERTION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("inframe_deletion")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INFRAME_DELETION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("missense_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_MISSENSE_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("protein_altering_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_PROTEIN_ALTERING_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("splice_region_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_SPLICE_REGION_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("incomplete_terminal_codon_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INCOMPLETE_TERMINAL_CODON_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("stop_retained_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_STOP_RETAINED_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("synonymous_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_SYNONYMOUS_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("coding_sequence_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_CODING_SEQUENCE_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("mature_miRNA_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_MATURE_MIRNA_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("5_prime_UTR_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_5_PRIME_UTR_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("3_prime_UTR_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_3_PRIME_UTR_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("non_coding_transcript_exon_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_NON_CODING_TRANSCRIPT_EXON_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("intron_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INTRON_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("NMD_transcript_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_NMD_TRANSCRIPT_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("non_coding_transcript_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_NON_CODING_TRANSCRIPT_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("upstream_gene_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_UPSTREAM_GENE_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("downstream_gene_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_DOWNSTREAM_GENE_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("TFBS_ablation")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TFBS_ABLATION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("TFBS_amplification")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TFBS_AMPLIFICATION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("TF_binding_site_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_TF_BINDING_SITE_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("regulatory_region_ablation")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_REGULATORY_REGION_ABLATION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("regulatory_region_amplification")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_REGULATORY_REGION_AMPLIFICATION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("feature_elongation")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_FEATURE_ELONGATION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("regulatory_region_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_REGULATORY_REGION_VARIANT_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("feature_truncation")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_FEATURE_TRUNCATION_CONSEQUENCE, properties, false);
+                    if (annotation.getConsequences().contains("intergenic_variant")) Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_INTERGENIC_VARIANT_CONSEQUENCE, properties, false);
 
                 }
             }
@@ -414,7 +429,7 @@ public class VariantDatabase {
         log.log(Level.INFO, "Linking annotations to features ...");
 
         //loop over variants
-        for (Map.Entry<GenomeVariant, Node> variant : variantNodes.entrySet()){
+        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()){
             if (vepAnnotations.containsKey(variant.getKey().getVEPVariant())){
 
                 //loop over functional annotations for this variant
@@ -430,7 +445,7 @@ public class VariantDatabase {
         log.log(Level.INFO, "Linking features to symbol ...");
 
         //loop over variants
-        for (Map.Entry<GenomeVariant, Node> variant : variantNodes.entrySet()) {
+        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) {
 
             if (vepAnnotations.containsKey(variant.getKey().getVEPVariant())) {
 
@@ -446,10 +461,11 @@ public class VariantDatabase {
 
     private void addVariantNodesAndGenotypeRelationshipsHelper(Node sampleNode, GenomeVariant genomeVariant, int genotypeQuality, RelationshipType relationshipType, String rsId) throws InvalidPropertiesFormatException {
 
+        Node tempGenomeVariantNode = null;
         boolean hasGenotype = false;
 
         //add variant node if not already during this session
-        if (!variantNodes.containsKey(genomeVariant)){
+        if (!newVariantNodes.containsKey(genomeVariant)){
 
             if (genomeVariant.getRef().length() == 1 && genomeVariant.getAlt().length() == 1) {
 
@@ -462,7 +478,10 @@ public class VariantDatabase {
                     properties.put("VariantId", genomeVariant.getConcatenatedVariant());
                     properties.put("rsId", rsId);
 
-                    variantNodes.put(genomeVariant, Neo4j.addNode(graphDb, snpLabel, properties));
+                    newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, snpLabel, properties));
+
+                } else {
+                    tempGenomeVariantNode = nodes.get(0);
                 }
 
             } else if (genomeVariant.getRef().length() != 1 || genomeVariant.getAlt().length() != 1) {
@@ -476,7 +495,10 @@ public class VariantDatabase {
                     properties.put("VariantId", genomeVariant.getConcatenatedVariant());
                     properties.put("rsId", rsId);
 
-                    variantNodes.put(genomeVariant, Neo4j.addNode(graphDb, indelLabel, properties));
+                    newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, indelLabel, properties));
+
+                } else {
+                    tempGenomeVariantNode = nodes.get(0);
                 }
 
             } else {
@@ -485,11 +507,13 @@ public class VariantDatabase {
 
         }
 
+        if (tempGenomeVariantNode == null) tempGenomeVariantNode = newVariantNodes.get(genomeVariant);
+
         //check if this genotype already exists in the DB
         try ( Transaction tx = graphDb.beginTx() ){
             for (Relationship relationship : sampleNode.getRelationships(Direction.OUTGOING)){
 
-                if (relationship.getOtherNode(sampleNode) == variantNodes.get(genomeVariant) && relationship.getProperty("LibraryId").equals(libraryId)){
+                if (relationship.getOtherNode(sampleNode).getId() == tempGenomeVariantNode.getId() && relationship.getProperty("LibraryId").equals(libraryId)){
                     hasGenotype = true;
                     break;
                 }
@@ -503,7 +527,7 @@ public class VariantDatabase {
             properties.put("GQ", genotypeQuality);
             properties.put("LibraryId", libraryId);
 
-            Neo4j.createRelationship(graphDb, sampleNode, variantNodes.get(genomeVariant), relationshipType, properties, true);
+            Neo4j.createRelationship(graphDb, sampleNode, tempGenomeVariantNode, relationshipType, properties, true);
         }
 
     }
@@ -564,7 +588,7 @@ public class VariantDatabase {
 
         }
 
-        log.log(Level.WARNING, genomeVariant.getConcatenatedVariant() + " not found in poly VCF");
+        log.log(Level.FINE, genomeVariant.getConcatenatedVariant() + " not found in poly VCF");
 
         return populationFrequencies;
     }

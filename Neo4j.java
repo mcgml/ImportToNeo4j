@@ -202,7 +202,7 @@ public class Neo4j{
 
             for (Relationship relationship : node1.getRelationships(type, direction)){
 
-                if (relationship.getOtherNode(node1).equals(node2)){
+                if (relationship.getOtherNode(node1).getId() == node2.getId()){
                     return true;
                 }
 
