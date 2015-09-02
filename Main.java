@@ -50,7 +50,6 @@ public class Main {
 
         variantDatabase.loadVCFFile();
 
-        variantDatabase.addPatientNodes();
         variantDatabase.addSampleNodes();
         variantDatabase.addVariantNodesAndGenotypeRelationships();
         variantDatabase.addSymbolNodes();

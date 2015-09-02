@@ -16,6 +16,13 @@ import java.util.logging.Logger;
  */
 
 //NB - assumption = if variant exists in DB so do the annotations
+//TODO convert VCF to minimal represented and remove sample-specific info; annotate then use as input
+//TODO check reference genome for 1kgp3 against b37
+//TODO check all variants have annotations
+//TODO import dbsnfp and use e v79
+//TODO import phenotype associated with gene
+//TODO retrieve pubmed abstracts (web ui)
+//TODO check alamut for extra functionality
 
 public class VariantDatabase {
 
@@ -23,35 +30,35 @@ public class VariantDatabase {
 
     private File neo4jDBPath;
     private GraphDatabaseService graphDb;
-    private VCFFileReader variantVcfFileReader, oneKgP3VcfFileReader;
+    private VCFFileReader variantVcfFileReader, popVcfFileReader;
     private ArrayList<VariantContext> vcfBody = new ArrayList<>(); //VCF file body
     private HashMap<String, HashSet<VEPAnnotation>> vepAnnotations = new HashMap<>(); //all VEP annotations
     private HashMap<GenomeVariant, Node> newVariantNodes = new HashMap<>(); //new variants added during this session
-    private HashMap<String, Node> patientNodes = new HashMap<>(); //patients added during this session
     private HashMap<String, Node> sampleNodes = new HashMap<>(); //samples added during this session
     private HashMap<GenomeVariant, HashMap<String, Node>> annotationNodes = new HashMap<>(); //
     private HashMap<String, Node> symbolNodes = new HashMap<>(); //symbols added during this session
     private HashMap<String, Node> featureNodes = new HashMap<>(); //features added during this session
-    private String libraryId = "150716_D00501_0047_BHB092ADXX";
 
-    private Label patientLabel = DynamicLabel.label("Patient");
+    //TODO add variables to VCF
+    private String libraryId = "K15-0000"; //TODO extract from VCF - Shire worklist
+    private String runId = "150716_D00501_0047_BHB092ADXX"; //TODO extract from VCF - flowcell/chipId
+    private int sampleNo = 0; //TODO extract from VCF - index number/position on sampleSheet
+
     private Label sampleLabel = DynamicLabel.label("Sample");
-    private Label snpLabel = DynamicLabel.label("Snp");
-    private Label indelLabel = DynamicLabel.label("Indel");
+    private Label variantLabel = DynamicLabel.label("Variant");
     private Label annotationLabel = DynamicLabel.label("Annotation");
     private Label symbolLabel = DynamicLabel.label("Symbol");
     private Label canonicalLabel = DynamicLabel.label("Canonical");
     private Label featureLabel = DynamicLabel.label("Feature");
 
-    public VariantDatabase(VCFFileReader variantVcfFileReader, VCFFileReader oneKgP3VcfFileReader, File neo4jDBPath){
+    public VariantDatabase(VCFFileReader variantVcfFileReader, VCFFileReader popVcfFileReader, File neo4jDBPath){
         this.variantVcfFileReader = variantVcfFileReader;
         this.neo4jDBPath = neo4jDBPath;
-        this.oneKgP3VcfFileReader = oneKgP3VcfFileReader;
+        this.popVcfFileReader = popVcfFileReader;
     }
 
     private enum relTypes implements RelationshipType
     {
-        HAS_SAMPLE,
         HAS_HET_VARIANT,
         HAS_HOM_VARIANT,
         IN_SYMBOL,
@@ -103,13 +110,14 @@ public class VariantDatabase {
         Neo4j.registerShutdownHook(graphDb);
     }
     public void createIndexes() {
-        Neo4j.createConstraint(graphDb, patientLabel, "PatientId");
+        log.log(Level.INFO, "Adding constraints ...");
+
         Neo4j.createConstraint(graphDb, sampleLabel, "SampleId");
-        Neo4j.createConstraint(graphDb, snpLabel, "VariantId");
-        Neo4j.createConstraint(graphDb, indelLabel, "VariantId");
-        Neo4j.createConstraint(graphDb, symbolLabel, "SymbolId");
+        Neo4j.createConstraint(graphDb, variantLabel, "VariantId");
+        Neo4j.createConstraint(graphDb, variantLabel, "rsId");
         Neo4j.createConstraint(graphDb, featureLabel, "FeatureId");
         Neo4j.createConstraint(graphDb, canonicalLabel, "FeatureId");
+        Neo4j.createConstraint(graphDb, symbolLabel, "SymbolId");
     }
 
     public void loadVCFFile(){
@@ -179,11 +187,6 @@ public class VariantDatabase {
             }
 
         }
-    }
-
-    public void addPatientNodes(){
-        log.log(Level.INFO, "Adding patient nodes ...");
-        //TODO
     }
     public void addSampleNodes() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding sample nodes ...");
@@ -327,7 +330,7 @@ public class VariantDatabase {
     public void addFunctionalAnnotationNodes() {
         log.log(Level.INFO, "Adding functional annotations ...");
 
-        //TODO add more annotations
+        //TODO add more annotations from dbsnfp
 
         //loop over variants
         for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()){
@@ -366,8 +369,6 @@ public class VariantDatabase {
 
                 }
 
-            } else {
-                log.log(Level.FINE, "No annotation for: " + variant.getKey().getConcatenatedVariant());
             }
         }
 
@@ -464,56 +465,39 @@ public class VariantDatabase {
         Node tempGenomeVariantNode = null;
         boolean hasGenotype = false;
 
+        //skip overlapping deletion alleles
+        if (genomeVariant.getAlt().equals('*')) return;
+
         //add variant node if not already during this session
         if (!newVariantNodes.containsKey(genomeVariant)){
 
-            if (genomeVariant.getRef().length() == 1 && genomeVariant.getAlt().length() == 1) {
+            ArrayList<Node> nodes = Neo4j.getNodes(graphDb, variantLabel, "VariantId", genomeVariant.getConcatenatedVariant());
 
-                ArrayList<Node> nodes = Neo4j.getNodes(graphDb, snpLabel, "VariantId", genomeVariant.getConcatenatedVariant());
+            //variant not present in DB -- add variant
+            if (nodes.size() == 0){
 
-                //variant not present in DB -- add variant
-                if (nodes.size() == 0){
+                HashMap<String, Object> properties = getPopulationFrequencies(genomeVariant);
+                properties.put("VariantId", genomeVariant.getConcatenatedVariant());
+                if (!rsId.equals('.')) properties.put("rsId", rsId);
 
-                    HashMap<String, Object> properties = getPopulationFrequencies(genomeVariant);
-                    properties.put("VariantId", genomeVariant.getConcatenatedVariant());
-                    properties.put("rsId", rsId);
-
-                    newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, snpLabel, properties));
-
-                } else {
-                    tempGenomeVariantNode = nodes.get(0);
-                }
-
-            } else if (genomeVariant.getRef().length() != 1 || genomeVariant.getAlt().length() != 1) {
-
-                ArrayList<Node> nodes = Neo4j.getNodes(graphDb, indelLabel, "VariantId", genomeVariant.getConcatenatedVariant());
-
-                //variant not present in DB -- add variant
-                if (nodes.size() == 0){
-
-                    HashMap<String, Object> properties = getPopulationFrequencies(genomeVariant);
-                    properties.put("VariantId", genomeVariant.getConcatenatedVariant());
-                    properties.put("rsId", rsId);
-
-                    newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, indelLabel, properties));
-
-                } else {
-                    tempGenomeVariantNode = nodes.get(0);
-                }
+                newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, variantLabel, properties));
+                tempGenomeVariantNode = newVariantNodes.get(genomeVariant);
 
             } else {
-                throw new InvalidPropertiesFormatException("Variant " + genomeVariant.getConcatenatedVariant() + " not SNP or Indel");
+                tempGenomeVariantNode = nodes.get(0);
             }
 
         }
-
-        if (tempGenomeVariantNode == null) tempGenomeVariantNode = newVariantNodes.get(genomeVariant);
 
         //check if this genotype already exists in the DB
         try ( Transaction tx = graphDb.beginTx() ){
             for (Relationship relationship : sampleNode.getRelationships(Direction.OUTGOING)){
 
-                if (relationship.getOtherNode(sampleNode).getId() == tempGenomeVariantNode.getId() && relationship.getProperty("LibraryId").equals(libraryId)){
+                if (relationship.getOtherNode(sampleNode).getId() == tempGenomeVariantNode.getId()
+                        && relationship.getProperty("LibraryId").equals(libraryId)
+                        && relationship.getProperty("RunId").equals(runId)
+                        && relationship.getProperty("SampleNo").equals(sampleNo)
+                        ){
                     hasGenotype = true;
                     break;
                 }
@@ -526,6 +510,8 @@ public class VariantDatabase {
 
             properties.put("GQ", genotypeQuality);
             properties.put("LibraryId", libraryId);
+            properties.put("RunId", runId);
+            properties.put("SampleNo", sampleNo);
 
             Neo4j.createRelationship(graphDb, sampleNode, tempGenomeVariantNode, relationshipType, properties, true);
         }
@@ -539,7 +525,7 @@ public class VariantDatabase {
         HashMap<String, Object> populationFrequencies = new HashMap<>();
         ArrayList<String> infoAtrributes;
 
-        Iterator<VariantContext> variantContextIterator = oneKgP3VcfFileReader.query(genomeVariant.getContig(), genomeVariant.getPos(), genomeVariant.getPos());
+        Iterator<VariantContext> variantContextIterator = popVcfFileReader.query(genomeVariant.getContig(), genomeVariant.getPos(), genomeVariant.getPos());
 
         //get 1kg variants
         while (variantContextIterator.hasNext()) {
@@ -587,8 +573,6 @@ public class VariantDatabase {
             }
 
         }
-
-        log.log(Level.FINE, genomeVariant.getConcatenatedVariant() + " not found in poly VCF");
 
         return populationFrequencies;
     }
