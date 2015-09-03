@@ -17,7 +17,7 @@ public class Main {
     public static void main(String[] args) throws InvalidPropertiesFormatException {
 
         if (args.length != 4) {
-            System.err.println("Usage: <VEPAnnotatedVCFFile> <1kgP3VCFFile> <Neo4jDBPath> <Overwrite>");
+            System.err.println("Usage: <GenotypeVCFFile> <AnnotatedVCFFile> <Neo4jDBPath> <Overwrite>");
             System.exit(1);
         }
 
@@ -26,10 +26,10 @@ public class Main {
 
         //create VCF file parser
         VCFFileReader variantVcfFileReader = new VCFFileReader(new File(args[0]), new File(args[0] + ".idx"));
-        VCFFileReader oneKgP3VcfFileReader = new VCFFileReader(new File(args[1]), new File(args[1] + ".idx"));
+        VCFFileReader annotationVcfFileReader = new VCFFileReader(new File(args[1]), new File(args[1] + ".idx"));
 
         //create database object
-        VariantDatabase variantDatabase = new VariantDatabase(variantVcfFileReader, oneKgP3VcfFileReader, new File(args[2]));
+        VariantDatabase variantDatabase = new VariantDatabase(variantVcfFileReader, annotationVcfFileReader, new File(args[2]));
 
         //update or overwrite
         boolean overwriteDB = Boolean.parseBoolean(args[3]);
@@ -48,10 +48,11 @@ public class Main {
         variantDatabase.startDatabase();
         if (overwriteDB) variantDatabase.createIndexes();
 
-        variantDatabase.loadVCFFile();
+        variantDatabase.loadVCFFiles();
 
         variantDatabase.addSampleNodes();
         variantDatabase.addVariantNodesAndGenotypeRelationships();
+        variantDatabase.addPopulationFrequencies();
         variantDatabase.addSymbolNodes();
         variantDatabase.addFeatureNodes();
         variantDatabase.addFunctionalAnnotationNodes();
@@ -62,7 +63,7 @@ public class Main {
         variantDatabase.shutdownDatabase();
 
         variantVcfFileReader.close();
-        oneKgP3VcfFileReader.close();
+        annotationVcfFileReader.close();
 
     }
 

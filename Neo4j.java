@@ -259,4 +259,34 @@ public class Neo4j{
 
         return nodes;
     }
+    public static boolean isNeighbourNodeWithSuppliedProperties(final GraphDatabaseService graphDb, Node startNode, Node endNode, Direction direction, RelationshipType relationshipType, HashMap<String, Object> properties){
+
+        boolean allPropertiesMatched;
+
+        try ( Transaction tx = graphDb.beginTx() ){
+            for (Relationship relationship : startNode.getRelationships(direction, relationshipType)){
+
+                //check if node is endnode
+                if (relationship.getOtherNode(startNode).equals(endNode)){
+                    allPropertiesMatched = true;
+
+                    for (Map.Entry<String, Object> property : properties.entrySet()){
+
+                        if (!relationship.getProperty(property.getKey()).equals(property.getValue())){
+                            allPropertiesMatched = false;
+                            break;
+                        }
+
+                    }
+
+                    if (allPropertiesMatched){
+                        return true;
+                    }
+                }
+
+            }
+        }
+
+        return false;
+    }
 }
