@@ -15,16 +15,14 @@ import java.util.logging.Logger;
  * Created by ml on 23/06/15.
  */
 
-//NB - assumption = if variant exists in DB so do the annotations
 //TODO convert VCF to minimal represented and remove sample-specific info; annotate then use as input
-//TODO check reference genome for 1kgp3 against b37
-//TODO check all variants have annotations
 //TODO import dbsnfp and use e v79
-//TODO import phenotype associated with gene
+//TODO parse OMIM records correctly
 //TODO retrieve pubmed abstracts (web ui)
 //TODO check alamut for extra functionality
 //TODO skip NTC
 //TODO add variant type label
+//TODO add sample type
 
 public class VariantDatabase {
 
@@ -33,20 +31,16 @@ public class VariantDatabase {
     private File neo4jDBPath;
     private GraphDatabaseService graphDb;
     private VCFFileReader variantVcfFileReader, annotationVcfFileReader;
+    private HashMap<String, HashSet<String>> geneMap2;
     private ArrayList<VariantContext> vcfBody = new ArrayList<>(); //VCF file body
     private HashMap<GenomeVariant, HashSet<VEPAnnotation>> vepAnnotations = new HashMap<>(); //all VEP annotations
     private HashMap<GenomeVariant, HashMap<String, Double>> populationFrequencies = new HashMap<>(); //population frequencies from mulitple sources
     private HashMap<GenomeVariant, Node> newVariantNodes = new HashMap<>(); //new variants added during this session
     private HashMap<GenomeVariant, Node> existingNodes = new HashMap<>();
-    private HashMap<String, Node> sampleNodes = new HashMap<>(); //samples added during this session
+    private HashMap<String, Node> runInfoNodes = new HashMap<>(); //samples added during this session
     private HashMap<GenomeVariant, HashMap<String, Node>> annotationNodes = new HashMap<>(); //
     private HashMap<String, Node> symbolNodes = new HashMap<>(); //symbols added during this session
     private HashMap<String, Node> featureNodes = new HashMap<>(); //features added during this session
-
-    //TODO add variables to VCF
-    private String libraryId = "K15-0000"; //TODO extract from VCF - Shire worklist
-    private String runId = "150716_D00501_0047_BHB092ADXX"; //TODO extract from VCF - flowcell/chipId
-    private int sampleNo = 0; //TODO extract from VCF - index number/position on sampleSheet
 
     private Label sampleLabel = DynamicLabel.label("Sample");
     private Label variantLabel = DynamicLabel.label("Variant");
@@ -54,11 +48,14 @@ public class VariantDatabase {
     private Label symbolLabel = DynamicLabel.label("Symbol");
     private Label canonicalLabel = DynamicLabel.label("Canonical");
     private Label featureLabel = DynamicLabel.label("Feature");
+    private Label disorderLabel = DynamicLabel.label("Disorder");
+    private Label runInfoLabel = DynamicLabel.label("RunInfo");
 
-    public VariantDatabase(VCFFileReader variantVcfFileReader, VCFFileReader annotationVcfFileReader, File neo4jDBPath){
+    public VariantDatabase(VCFFileReader variantVcfFileReader, VCFFileReader annotationVcfFileReader, File neo4jDBPath, HashMap<String, HashSet<String>> geneMap2){
         this.variantVcfFileReader = variantVcfFileReader;
         this.neo4jDBPath = neo4jDBPath;
         this.annotationVcfFileReader = annotationVcfFileReader;
+        this.geneMap2 = geneMap2;
     }
 
     private enum relTypes implements RelationshipType
@@ -66,12 +63,14 @@ public class VariantDatabase {
         HAS_HET_VARIANT,
         HAS_HOM_VARIANT,
         IN_SYMBOL,
-        IN_FEATURE
+        IN_FEATURE,
+        HAS_UNKNOWN_CONSEQUENCE,
+        HAS_ASSOCIATED_DISORDER,
+        HAS_ANALYSIS
     }
     public void startDatabase(){
         log.log(Level.INFO, "Starting database ...");
 
-        //create DB
         graphDb = new GraphDatabaseFactory()
                 .newEmbeddedDatabaseBuilder(neo4jDBPath)
                 .newGraphDatabase();
@@ -87,6 +86,10 @@ public class VariantDatabase {
         Neo4j.createConstraint(graphDb, featureLabel, "FeatureId");
         Neo4j.createConstraint(graphDb, canonicalLabel, "FeatureId");
         Neo4j.createConstraint(graphDb, symbolLabel, "SymbolId");
+        Neo4j.createConstraint(graphDb, disorderLabel, "Title");
+        Neo4j.createConstraint(graphDb, runInfoLabel, "AnalysisId");
+        Neo4j.createIndex(graphDb, runInfoLabel, "LibraryId");
+        Neo4j.createIndex(graphDb, runInfoLabel, "RunId");
     }
 
     public void loadVCFFiles() throws InvalidPropertiesFormatException {
@@ -101,8 +104,8 @@ public class VariantDatabase {
             VariantContext variant = variantContextIterator.next();
             ++n;
 
-            if (n > 100){
-                //break;
+            if (n > 250){
+                break;
             }
 
             if (!variant.isFiltered() && variant.isVariant()){
@@ -147,13 +150,33 @@ public class VariantDatabase {
         }
 
     }
-    public void addSampleNodes() throws InvalidPropertiesFormatException {
-        log.log(Level.INFO, "Adding sample nodes ...");
+    public void addSampleAndRunInfoNodes() throws InvalidPropertiesFormatException {
+        log.log(Level.INFO, "Adding sample and run info nodes ...");
 
-        //TODO add sample type
+        HashMap<String, Object> properties = new HashMap<>();
+        ArrayList<String> sampleIds = variantVcfFileReader.getFileHeader().getSampleNamesInOrder();
 
-        for (String sampleId : variantVcfFileReader.getFileHeader().getSampleNamesInOrder()){
-            sampleNodes.put(sampleId, Neo4j.matchOrCreateUniqueNode(graphDb, sampleLabel, "SampleId", sampleId));
+        String libraryId = "K15-0000"; //TODO extract from VCF - Shire worklist
+        String runId = "150716_D00501_0047_BHB092ADXX"; //TODO extract from VCF - flowcell/chipId
+        //TODO get worksheet position (n)
+
+        for (int n = 0; n < sampleIds.size(); ++n){
+
+            //add sample
+            Node sampleIdNode = Neo4j.matchOrCreateUniqueNode(graphDb, sampleLabel, "SampleId", sampleIds.get(n));
+
+            //add run info
+            properties.put("LibraryId", libraryId);
+            properties.put("RunId", runId);
+            properties.put("SampleNo", n);
+            properties.put("AnalysisId", libraryId + "_" + n + "_" + runId);
+
+            Node runInfoNode = Neo4j.addNode(graphDb, runInfoLabel, properties);
+            properties.clear();
+
+            //link sample and runInfo
+            Neo4j.createRelationship(graphDb, sampleIdNode, runInfoNode, relTypes.HAS_ANALYSIS, properties, false);
+            runInfoNodes.put(sampleIds.get(n), runInfoNode);
         }
 
     }
@@ -180,7 +203,7 @@ public class VariantDatabase {
                     genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
                     genomeVariant.convertToMinimalRepresentation();
 
-                    addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), sampleNodes.get(genotype.getSampleName()), relTypes.HAS_HOM_VARIANT);
+                    addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), relTypes.HAS_HOM_VARIANT);
 
                 } else if (genotype.isHet()){
 
@@ -189,7 +212,7 @@ public class VariantDatabase {
                     genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
                     genomeVariant.convertToMinimalRepresentation();
 
-                    addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), sampleNodes.get(genotype.getSampleName()), relTypes.HAS_HET_VARIANT);
+                    addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), relTypes.HAS_HET_VARIANT);
 
                     if (genotype.isHetNonRef()){
 
@@ -198,7 +221,7 @@ public class VariantDatabase {
                         genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(0).getBaseString());
                         genomeVariant.convertToMinimalRepresentation();
 
-                        addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), sampleNodes.get(genotype.getSampleName()), relTypes.HAS_HET_VARIANT);
+                        addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), relTypes.HAS_HET_VARIANT);
 
                     }
 
@@ -212,144 +235,95 @@ public class VariantDatabase {
 
     }
     public void addPopulationFrequencies(){
+        log.log(Level.INFO, "Adding population frequencies ...");
+
         //TODO and dbSnp RsID
     }
-    public void addSymbolNodes() throws InvalidPropertiesFormatException {
-        log.log(Level.INFO, "Adding symbols ...");
+    public void addAnnotations() throws InvalidPropertiesFormatException {
+        log.log(Level.INFO, "Adding annotations ...");
 
-        //loop over new variants
-        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) {
-            if (vepAnnotations.containsKey(variant.getKey())) {
+        HashMap<String, Object> properties = new HashMap<>();
 
-                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey())){
-
-                    //skip symbols already imported during this session
-                    if (annotation.getSymbol() != null && !annotation.getSymbol().equals("") && !symbolNodes.containsKey(annotation.getSymbol())){
-                        symbolNodes.put(annotation.getSymbol(), Neo4j.matchOrCreateUniqueNode(graphDb, symbolLabel, "SymbolId", annotation.getSymbol()));
-                    }
-
-                }
-
-            }
-        }
-
-    }
-    public void addFeatureNodes() {
-        log.log(Level.INFO, "Adding features ...");
-
-        //loop over new variants
-        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) {
-            if (vepAnnotations.containsKey(variant.getKey())) {
-
-                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey())){
-
-                    if (annotation.getFeature() != null && !annotation.getFeature().equals("") && !featureNodes.containsKey(annotation.getFeature())){ //skip features already imported during this session
-
-                        ArrayList<Node> nodes = Neo4j.getNodes(graphDb, featureLabel, "FeatureId", annotation.getFeature());
-
-                        if (nodes.size() == 0) {
-
-                            HashMap<String, Object> properties = new HashMap<>();
-
-                            if(annotation.getFeatureType() != null) properties.put("FeatureType", annotation.getFeatureType());
-                            if(annotation.getBiotype() != null) properties.put("Biotype", annotation.getBiotype());
-                            if(annotation.getStrand() != null) properties.put("Strand", annotation.getStrand());
-                            if(annotation.getExon() != null) properties.put("TotalExons", annotation.getExon().split("/")[1]);
-
-                            featureNodes.put(annotation.getFeature(), Neo4j.addNode(graphDb, featureLabel, properties));
-
-                            if (annotation.getCanonical() != null && annotation.getCanonical().equals("YES")) Neo4j.addNodeLabel(graphDb, featureNodes.get(annotation.getFeature()), canonicalLabel);
-
-                        } else {
-                            featureNodes.put(annotation.getFeature(), nodes.get(0));
-                        }
-
-                    }
-
-                }
-
-            }
-        }
-
-    }
-    public void addFunctionalAnnotationNodes() {
-        log.log(Level.INFO, "Adding functional annotations ...");
-
-        //TODO add more annotations from dbsnfp
-
-        //loop over variants
-        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()){
-            if (vepAnnotations.containsKey(variant.getKey())){
+        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) { //loop over new variants
+            for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey())){
 
                 if (!annotationNodes.containsKey(variant.getKey())) annotationNodes.put(variant.getKey(), new HashMap<String, Node>());
 
-                //loop over functional annotations for this variant
-                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey())) {
+                //add symbols
+                if (annotation.getSymbol() != null && !annotation.getSymbol().equals("") && !symbolNodes.containsKey(annotation.getSymbol())){
+                    ArrayList<Node> nodes = Neo4j.getNodes(graphDb, symbolLabel, "SymbolId", annotation.getSymbol());
 
-                    HashMap<String, Object> properties = new HashMap<>();
+                    if (nodes.size() == 0){
 
-                    if(annotation.getHgvsCoding() != null) properties.put("HGVSc", annotation.getHgvsCoding());
-                    if(annotation.getHgvsProtein() != null) properties.put("HGVSp", annotation.getHgvsProtein());
-                    if(annotation.getPolyphen() != null) properties.put("PolyPhen", annotation.getPolyphen());
-                    if(annotation.getSift() != null) properties.put("SIFT", annotation.getSift());
-                    if(annotation.getExon() != null) properties.put("Exon", annotation.getExon().split("/")[0]);
-                    if(annotation.getIntron() != null) properties.put("Intron", annotation.getIntron().split("/")[0]);
+                        //add symbol
+                        properties.put("SymbolId", annotation.getSymbol());
+                        if (annotation.getSymbolSource() != null && !annotation.getSymbolSource().equals("")) properties.put("SymbolSource", annotation.getSymbolSource());
 
-                    annotationNodes.get(variant.getKey()).put(annotation.getFeature(), Neo4j.addNode(graphDb, annotationLabel, properties));
-                }
+                        symbolNodes.put(annotation.getSymbol(), Neo4j.addNode(graphDb, symbolLabel, properties));
 
-            }
-        }
-
-    }
-    public void addConsequenceRelationships() {
-        log.log(Level.INFO, "Linking variants To functional annotations ...");
-
-        //loop over variants
-        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()){
-            if (vepAnnotations.containsKey(variant.getKey())){
-
-                HashMap<String, Object> properties = new HashMap<>();
-
-                //loop over all annotations by for this allele
-                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey())){
-
-                    for (String consequence : annotation.getConsequences()){
-
-                        //create relationship type
-                        Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), DynamicRelationshipType.withName("HAS_" + consequence.toUpperCase() + "_CONSEQUENCE"), properties, false);
+                    } else {
+                        symbolNodes.put(annotation.getSymbol(), nodes.get(0));
                     }
 
                 }
-            }
 
-        }
-    }
-    public void addInFeatureRelationships() {
-        log.log(Level.INFO, "Linking annotations to features ...");
+                //add feature
+                if (annotation.getFeature() != null && !annotation.getFeature().equals("") && !featureNodes.containsKey(annotation.getFeature())){
+                    ArrayList<Node> nodes = Neo4j.getNodes(graphDb, featureLabel, "FeatureId", annotation.getFeature());
 
-        //loop over variants
-        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()){
-            if (vepAnnotations.containsKey(variant.getKey())){
+                    if (nodes.size() == 0) {
 
-                //loop over functional annotations for this variant
-                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey())) {
+                        properties.clear();
+                        if(annotation.getFeatureType() != null) properties.put("FeatureType", annotation.getFeatureType());
+                        if(annotation.getBiotype() != null) properties.put("Biotype", annotation.getBiotype());
+                        if(annotation.getStrand() != null) properties.put("Strand", annotation.getStrand());
+                        if(annotation.getExon() != null) properties.put("TotalExons", annotation.getExon().split("/")[1]);
+
+                        featureNodes.put(annotation.getFeature(), Neo4j.addNode(graphDb, featureLabel, properties));
+
+                        if (annotation.getCanonical() != null && annotation.getCanonical().equals("YES")) Neo4j.addNodeLabel(graphDb, featureNodes.get(annotation.getFeature()), canonicalLabel);
+
+                    } else {
+                        featureNodes.put(annotation.getFeature(), nodes.get(0));
+                    }
+
+                }
+
+                //add functional annotations
+                properties.clear();
+                if(annotation.getHgvsCoding() != null) properties.put("HGVSc", annotation.getHgvsCoding());
+                if(annotation.getHgvsProtein() != null) properties.put("HGVSp", annotation.getHgvsProtein());
+                if(annotation.getExon() != null) properties.put("Exon", annotation.getExon().split("/")[0]);
+                if(annotation.getIntron() != null) properties.put("Intron", annotation.getIntron().split("/")[0]);
+
+                annotationNodes.get(variant.getKey()).put(annotation.getFeature(), Neo4j.addNode(graphDb, annotationLabel, properties));
+
+                //add omim disorders and link to disease
+                properties.clear();
+                if (geneMap2.containsKey(annotation.getSymbol())) {
+                    for (String disorderTitle : geneMap2.get(annotation.getSymbol())){
+                        Node node = Neo4j.matchOrCreateUniqueNode(graphDb, disorderLabel, "Title", disorderTitle);
+                        Neo4j.createRelationship(graphDb, symbolNodes.get(annotation.getSymbol()), node, relTypes.HAS_ASSOCIATED_DISORDER, properties, false);
+                    }
+                }
+
+                //link consequences
+                properties.clear();
+                if (annotation.getConsequences().size() > 0){
+                    for (String consequence : annotation.getConsequences()){
+                        Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), DynamicRelationshipType.withName("HAS_" + consequence.toUpperCase() + "_CONSEQUENCE"), properties, false);
+                    }
+                } else {
+                    Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_UNKNOWN_CONSEQUENCE, properties, false);
+                }
+
+                //add in feature relationship
+                if (annotationNodes.get(variant.getKey()).get(annotation.getFeature()) != null && featureNodes.get(annotation.getFeature()) != null){
                     Neo4j.createRelationship(graphDb, annotationNodes.get(variant.getKey()).get(annotation.getFeature()), featureNodes.get(annotation.getFeature()), relTypes.IN_FEATURE, new HashMap<String, Object>(), false);
                 }
 
-            }
-        }
-
-    }
-    public void addInSymbolRelationships() {
-        log.log(Level.INFO, "Linking features to symbol ...");
-
-        //loop over variants
-        for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) {
-            if (vepAnnotations.containsKey(variant.getKey())) {
-
-                //loop over functional annotations for this variant
-                for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey())) {
+                //add in symbol relationship
+                if (featureNodes.get(annotation.getFeature()) != null && symbolNodes.get(annotation.getSymbol()) != null){
                     Neo4j.createRelationship(graphDb, featureNodes.get(annotation.getFeature()), symbolNodes.get(annotation.getSymbol()), relTypes.IN_SYMBOL, new HashMap<String, Object>(), false);
                 }
 
@@ -358,7 +332,7 @@ public class VariantDatabase {
 
     }
 
-    private void addVariantNodesAndGenotypeRelationshipsHelper(GenomeVariant genomeVariant, int genotypeQuality, Node sampleNode, RelationshipType relationshipType){
+    private void addVariantNodesAndGenotypeRelationshipsHelper(GenomeVariant genomeVariant, int genotypeQuality, Node runInfoNode, RelationshipType relationshipType){
 
         HashMap<String, Object> properties = new HashMap<>();
 
@@ -372,16 +346,11 @@ public class VariantDatabase {
                 existingNodes.put(genomeVariant, nodes.get(0));
             }
         }
-
         properties.clear();
-        properties.put("LibraryId", libraryId);
-        properties.put("RunId", runId);
-        properties.put("SampleNo", sampleNo);
-        properties.put("Quality", genotypeQuality);
 
-        if (!Neo4j.isNeighbourNodeWithSuppliedProperties(graphDb, sampleNode, newVariantNodes.get(genomeVariant), Direction.OUTGOING, relationshipType, properties)){
-            Neo4j.createRelationship(graphDb, sampleNode, newVariantNodes.get(genomeVariant), relationshipType, properties, false);
-        }
+        //create genotype relationship
+        properties.put("Quality", genotypeQuality);
+        Neo4j.createRelationship(graphDb, runInfoNode, newVariantNodes.get(genomeVariant), relationshipType, properties, false);
 
     }
 

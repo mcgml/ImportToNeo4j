@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 /**
  * Created by ml on 17/06/2015.
  */
-public class VEPAnnotation {
+public class VEPAnnotationv75 {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
@@ -18,7 +18,7 @@ public class VEPAnnotation {
     private HashSet<String> consequences = new HashSet<>();
     private HashSet<String> clinSigs = new HashSet<>();
 
-    public VEPAnnotation(String record) {
+    public VEPAnnotationv75(String record) {
         this.record = record;
     }
 
@@ -326,7 +326,7 @@ public class VEPAnnotation {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        VEPAnnotation that = (VEPAnnotation) o;
+        VEPAnnotationv75 that = (VEPAnnotationv75) o;
 
         if (allele != null ? !allele.equals(that.allele) : that.allele != null) return false;
         if (gene != null ? !gene.equals(that.gene) : that.gene != null) return false;
