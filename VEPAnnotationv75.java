@@ -9,7 +9,7 @@ import java.util.logging.Logger;
  */
 public class VEPAnnotationv75 {
 
-    private static final Logger log = Logger.getLogger(Main.class.getName());
+    private static final Logger log = Logger.getLogger(VEPAnnotationv75.class.getName());
 
     private String record, allele, gene, feature, featureType, cdnaPosition, cdsPosition, proteinPosition, aminoAcids, codons,
             existingVariation, aaMaf, eaMaf, exon, intron, motifName, motifPos, highInfPos, motifScoreChange, distance, strand,

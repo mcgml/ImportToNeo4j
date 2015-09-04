@@ -23,6 +23,8 @@ import java.util.logging.Logger;
 //TODO skip NTC
 //TODO add variant type label
 //TODO add sample type
+//TODO add pipeline name & version
+//TODO add panel
 
 public class VariantDatabase {
 
@@ -33,7 +35,7 @@ public class VariantDatabase {
     private VCFFileReader variantVcfFileReader, annotationVcfFileReader;
     private HashMap<String, HashSet<String>> geneMap2;
     private ArrayList<VariantContext> vcfBody = new ArrayList<>(); //VCF file body
-    private HashMap<GenomeVariant, HashSet<VEPAnnotation>> vepAnnotations = new HashMap<>(); //all VEP annotations
+    private HashMap<GenomeVariant, HashSet<VEPAnnotationv79>> VEPAnnotations = new HashMap<>(); //all VEP annotations
     private HashMap<GenomeVariant, HashMap<String, Double>> populationFrequencies = new HashMap<>(); //population frequencies from mulitple sources
     private HashMap<GenomeVariant, Node> newVariantNodes = new HashMap<>(); //new variants added during this session
     private HashMap<GenomeVariant, Node> existingNodes = new HashMap<>();
@@ -105,7 +107,7 @@ public class VariantDatabase {
             ++n;
 
             if (n > 250){
-                break;
+                //break;
             }
 
             if (!variant.isFiltered() && variant.isVariant()){
@@ -123,28 +125,68 @@ public class VariantDatabase {
 
             GenomeVariant genomeVariant = new GenomeVariant(variant.getContig(), variant.getStart(), variant.getReference().getBaseString(), variant.getAlternateAllele(0).getBaseString());
 
-            if (!vepAnnotations.containsKey(genomeVariant)) vepAnnotations.put(genomeVariant, new HashSet<VEPAnnotation>());
+            if (!VEPAnnotations.containsKey(genomeVariant)) VEPAnnotations.put(genomeVariant, new HashSet<VEPAnnotationv79>());
+            if (!populationFrequencies.containsKey(genomeVariant)) populationFrequencies.put(genomeVariant, new HashMap<String, Double>());
 
             //split annotations and make unique
             try {
 
                 //one annotation
-                VEPAnnotation vepAnnotation = new VEPAnnotation((String) variant.getAttribute("CSQ"));
-                vepAnnotation.parseAnnotation();
+                VEPAnnotationv79 vepAnnotationv79 = new VEPAnnotationv79((String) variant.getAttribute("CSQ"));
+                vepAnnotationv79.parseAnnotation();
 
-                vepAnnotations.get(genomeVariant).add(vepAnnotation);
+                VEPAnnotations.get(genomeVariant).add(vepAnnotationv79);
 
             } catch (ClassCastException e) {
 
                 //multiple annotations
                 for (String annotation : (ArrayList<String>) variant.getAttribute("CSQ")) {
 
-                    VEPAnnotation vepAnnotation = new VEPAnnotation(annotation);
-                    vepAnnotation.parseAnnotation();
+                    VEPAnnotationv79 vepAnnotationv79 = new VEPAnnotationv79(annotation);
+                    vepAnnotationv79.parseAnnotation();
 
-                    vepAnnotations.get(genomeVariant).add(vepAnnotation);
+                    VEPAnnotations.get(genomeVariant).add(vepAnnotationv79);
 
                 }
+            }
+
+            //split population frequencies
+            if (variant.getAttribute("1kgp3.AFR_AF") != null && !variant.getAttribute("1kgp3.AFR_AF").equals(".")) {
+                populationFrequencies.get(genomeVariant).put("1kGPhase3_AFR_AF", Double.parseDouble((String) variant.getAttribute("1kgp3.AFR_AF")));
+            }
+            if (variant.getAttribute("1kgp3.AMR_AF") != null && !variant.getAttribute("1kgp3.AMR_AF").equals(".")) {
+                populationFrequencies.get(genomeVariant).put("1kGPhase3_AMR_AF", Double.parseDouble((String) variant.getAttribute("1kgp3.AMR_AF")));
+            }
+            if (variant.getAttribute("1kgp3.ASN_AF") != null && !variant.getAttribute("1kgp3.ASN_AF").equals(".")) {
+                populationFrequencies.get(genomeVariant).put("1kGPhase3_ASN_AF", Double.parseDouble((String) variant.getAttribute("1kgp3.ASN_AF")));
+            }
+            if (variant.getAttribute("1kgp3.EUR_AF") != null && !variant.getAttribute("1kgp3.EUR_AF").equals(".")) {
+                populationFrequencies.get(genomeVariant).put("1kGPhase3_EUR_AF", Double.parseDouble((String) variant.getAttribute("1kgp3.EUR_AF")));
+            }
+            if (variant.getAttribute("1kgp3.SAS_AF") != null && !variant.getAttribute("1kgp3.SAS_AF").equals(".")) {
+                populationFrequencies.get(genomeVariant).put("1kGPhase3_SAS_AF", Double.parseDouble((String) variant.getAttribute("1kgp3.SAS_AF")));
+            }
+
+            if (variant.getAttribute("ExAC.AC_AFR") != null && !variant.getAttribute("ExAC.AC_AFR").equals(".") && variant.getAttribute("ExAC.AN_AFR") != null && !variant.getAttribute("ExAC.AN_AFR").equals(".") && Integer.parseInt((String) variant.getAttribute("ExAC.AN_AFR")) > 50) {
+                populationFrequencies.get(genomeVariant).put("ExAC_AFR_AF", Double.parseDouble((String) variant.getAttribute("ExAC.AC_AFR")) / Double.parseDouble((String) variant.getAttribute("ExAC.AN_AFR")));
+            }
+            if (variant.getAttribute("ExAC.AC_AMR") != null && !variant.getAttribute("ExAC.AC_AMR").equals(".") && variant.getAttribute("ExAC.AN_AMR") != null && !variant.getAttribute("ExAC.AN_AMR").equals(".") && Integer.parseInt((String) variant.getAttribute("ExAC.AN_AMR")) > 50) {
+                populationFrequencies.get(genomeVariant).put("ExAC_AMR_AF", Double.parseDouble((String) variant.getAttribute("ExAC.AC_AMR")) / Double.parseDouble((String) variant.getAttribute("ExAC.AN_AMR")));
+            }
+            if (variant.getAttribute("ExAC.AC_EAS") != null && !variant.getAttribute("ExAC.AC_EAS").equals(".") && variant.getAttribute("ExAC.AN_EAS") != null && !variant.getAttribute("ExAC.AN_EAS").equals(".") && Integer.parseInt((String) variant.getAttribute("ExAC.AN_EAS")) > 50) {
+                populationFrequencies.get(genomeVariant).put("ExAC_EAS_AF", Double.parseDouble((String) variant.getAttribute("ExAC.AC_EAS")) / Double.parseDouble((String) variant.getAttribute("ExAC.AN_EAS")));
+            }
+            if (variant.getAttribute("ExAC.AC_FIN") != null && !variant.getAttribute("ExAC.AC_FIN").equals(".") && variant.getAttribute("ExAC.AN_FIN") != null && !variant.getAttribute("ExAC.AN_FIN").equals(".") && Integer.parseInt((String) variant.getAttribute("ExAC.AN_FIN")) > 50) {
+                populationFrequencies.get(genomeVariant).put("ExAC_FIN_AF", Double.parseDouble((String) variant.getAttribute("ExAC.AC_FIN")) / Double.parseDouble((String) variant.getAttribute("ExAC.AN_FIN")));
+            }
+            if (variant.getAttribute("ExAC.AC_NFE") != null && !variant.getAttribute("ExAC.AC_NFE").equals(".") && variant.getAttribute("ExAC.AN_NFE") != null && !variant.getAttribute("ExAC.AN_NFE").equals(".") && Integer.parseInt((String) variant.getAttribute("ExAC.AN_NFE")) > 50) {
+                populationFrequencies.get(genomeVariant).put("ExAC_NFE_AF", Double.parseDouble((String) variant.getAttribute("ExAC.AC_NFE")) / Double.parseDouble((String) variant.getAttribute("ExAC.AN_NFE")));
+            }
+            if (variant.getAttribute("ExAC.AC_OTH") != null && !variant.getAttribute("ExAC.AC_OTH").equals(".") && variant.getAttribute("ExAC.AN_OTH") != null && !variant.getAttribute("ExAC.AN_OTH").equals(".") && Integer.parseInt((String) variant.getAttribute("ExAC.AN_OTH")) > 50) {
+                populationFrequencies.get(genomeVariant).put("ExAC_OTH_AF", Double.parseDouble((String) variant.getAttribute("ExAC.AC_OTH")) / Double.parseDouble((String) variant.getAttribute("ExAC.AN_OTH")));
+            }
+            if (variant.getAttribute("ExAC.AC_SAS") != null && !variant.getAttribute("ExAC.AC_SAS").equals(".") && variant.getAttribute("ExAC.AN_SAS") != null && !variant.getAttribute("ExAC.AN_SAS").equals(".") && Integer.parseInt((String) variant.getAttribute("ExAC.AN_SAS")) > 50) {
+                populationFrequencies.get(genomeVariant).put("ExAC_SAS_AF", Double.parseDouble((String) variant.getAttribute("ExAC.AC_SAS")) / Double.parseDouble((String) variant.getAttribute("ExAC.AN_SAS")));
             }
 
         }
@@ -245,7 +287,7 @@ public class VariantDatabase {
         HashMap<String, Object> properties = new HashMap<>();
 
         for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) { //loop over new variants
-            for (VEPAnnotation annotation : vepAnnotations.get(variant.getKey())){
+            for (VEPAnnotationv79 annotation : VEPAnnotations.get(variant.getKey())){
 
                 if (!annotationNodes.containsKey(variant.getKey())) annotationNodes.put(variant.getKey(), new HashMap<String, Node>());
 
@@ -274,6 +316,7 @@ public class VariantDatabase {
                     if (nodes.size() == 0) {
 
                         properties.clear();
+                        if(annotation.getFeature() != null) properties.put("FeatureId", annotation.getFeature());
                         if(annotation.getFeatureType() != null) properties.put("FeatureType", annotation.getFeatureType());
                         if(annotation.getBiotype() != null) properties.put("Biotype", annotation.getBiotype());
                         if(annotation.getStrand() != null) properties.put("Strand", annotation.getStrand());
@@ -341,6 +384,12 @@ public class VariantDatabase {
 
             if (nodes.size() == 0){
                 properties.put("VariantId", genomeVariant.getConcatenatedVariant());
+
+                //add population freqs
+                for (Map.Entry<String, Double> iter : populationFrequencies.get(genomeVariant).entrySet()){
+                    properties.put(iter.getKey(), iter.getValue());
+                }
+
                 newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, variantLabel, properties));
             } else {
                 existingNodes.put(genomeVariant, nodes.get(0));
