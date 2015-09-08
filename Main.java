@@ -58,7 +58,6 @@ public class Main {
 
         variantDatabase.addSampleAndRunInfoNodes();
         variantDatabase.addVariantNodesAndGenotypeRelationships();
-        variantDatabase.addPopulationFrequencies();
         variantDatabase.addAnnotations();
 
         variantDatabase.shutdownDatabase();

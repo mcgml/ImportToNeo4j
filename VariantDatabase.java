@@ -37,7 +37,7 @@ public class VariantDatabase {
     private VCFFileReader variantVcfFileReader, annotationVcfFileReader;
     private HashMap<String, HashSet<String>> geneMap2;
     private ArrayList<VariantContext> vcfBody = new ArrayList<>(); //VCF file body
-    private HashMap<GenomeVariant, HashSet<VEPAnnotationv79>> VEPAnnotations = new HashMap<>(); //all VEP annotations
+    private HashMap<GenomeVariant, HashSet<VEPAnnotationv75>> VEPAnnotations = new HashMap<>(); //all VEP annotations
     private HashMap<GenomeVariant, HashMap<String, Double>> populationFrequencies = new HashMap<>(); //population frequencies from mulitple sources
     private HashMap<GenomeVariant, Node> newVariantNodes = new HashMap<>(); //new variants added during this session
     private HashMap<GenomeVariant, Node> existingNodes = new HashMap<>();
@@ -48,6 +48,8 @@ public class VariantDatabase {
 
     private Label sampleLabel = DynamicLabel.label("Sample");
     private Label variantLabel = DynamicLabel.label("Variant");
+    private Label autoChromLabel = DynamicLabel.label("AutoChrom");
+    private Label sexChromLabel = DynamicLabel.label("SexChrom");
     private Label annotationLabel = DynamicLabel.label("Annotation");
     private Label symbolLabel = DynamicLabel.label("Symbol");
     private Label canonicalLabel = DynamicLabel.label("Canonical");
@@ -127,27 +129,27 @@ public class VariantDatabase {
 
             GenomeVariant genomeVariant = new GenomeVariant(variant.getContig(), variant.getStart(), variant.getReference().getBaseString(), variant.getAlternateAllele(0).getBaseString());
 
-            if (!VEPAnnotations.containsKey(genomeVariant)) VEPAnnotations.put(genomeVariant, new HashSet<VEPAnnotationv79>());
+            if (!VEPAnnotations.containsKey(genomeVariant)) VEPAnnotations.put(genomeVariant, new HashSet<VEPAnnotationv75>());
             if (!populationFrequencies.containsKey(genomeVariant)) populationFrequencies.put(genomeVariant, new HashMap<String, Double>());
 
             //split annotations and make unique
             try {
 
                 //one annotation
-                VEPAnnotationv79 vepAnnotationv79 = new VEPAnnotationv79((String) variant.getAttribute("CSQ"));
-                vepAnnotationv79.parseAnnotation();
+                VEPAnnotationv75 vepAnnotationv75 = new VEPAnnotationv75((String) variant.getAttribute("CSQ"));
+                vepAnnotationv75.parseAnnotation();
 
-                VEPAnnotations.get(genomeVariant).add(vepAnnotationv79);
+                VEPAnnotations.get(genomeVariant).add(vepAnnotationv75);
 
             } catch (ClassCastException e) {
 
                 //multiple annotations
                 for (String annotation : (ArrayList<String>) variant.getAttribute("CSQ")) {
 
-                    VEPAnnotationv79 vepAnnotationv79 = new VEPAnnotationv79(annotation);
-                    vepAnnotationv79.parseAnnotation();
+                    VEPAnnotationv75 vepAnnotationv75 = new VEPAnnotationv75(annotation);
+                    vepAnnotationv75.parseAnnotation();
 
-                    VEPAnnotations.get(genomeVariant).add(vepAnnotationv79);
+                    VEPAnnotations.get(genomeVariant).add(vepAnnotationv75);
 
                 }
             }
@@ -270,7 +272,7 @@ public class VariantDatabase {
                     }
 
                 } else {
-                    throw new InvalidPropertiesFormatException("Dosage unknown: " + vcfRecord.toString());
+                    throw new InvalidPropertiesFormatException("Inheritance unknown: " + vcfRecord.toString());
                 }
 
             }
@@ -284,7 +286,7 @@ public class VariantDatabase {
         HashMap<String, Object> properties = new HashMap<>();
 
         for (Map.Entry<GenomeVariant, Node> variant : newVariantNodes.entrySet()) { //loop over new variants
-            for (VEPAnnotationv79 annotation : VEPAnnotations.get(variant.getKey())){
+            for (VEPAnnotationv75 annotation : VEPAnnotations.get(variant.getKey())){
 
                 if (!annotationNodes.containsKey(variant.getKey())) annotationNodes.put(variant.getKey(), new HashMap<String, Node>());
 
@@ -388,6 +390,13 @@ public class VariantDatabase {
                 }
 
                 newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, variantLabel, properties));
+
+                if (genomeVariant.getContig().equals("X") || genomeVariant.getContig().equals("Y")){
+                    Neo4j.addNodeLabel(graphDb, newVariantNodes.get(genomeVariant), sexChromLabel);
+                } else if (Integer.parseInt(genomeVariant.getContig()) >= 1 && Integer.parseInt(genomeVariant.getContig()) <= 22){
+                    Neo4j.addNodeLabel(graphDb, newVariantNodes.get(genomeVariant), autoChromLabel);
+                }
+
             } else {
                 existingNodes.put(genomeVariant, nodes.get(0));
             }
