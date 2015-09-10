@@ -8,6 +8,28 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class Neo4j{
+
+    //labels
+    private static Label sampleLabel = DynamicLabel.label("Sample");
+    private static Label variantLabel = DynamicLabel.label("Variant");
+    private static Label autoChromLabel = DynamicLabel.label("AutoChrom");
+    private static Label sexChromLabel = DynamicLabel.label("SexChrom");
+    private static Label annotationLabel = DynamicLabel.label("Annotation");
+    private static Label symbolLabel = DynamicLabel.label("Symbol");
+    private static Label canonicalLabel = DynamicLabel.label("Canonical");
+    private static Label featureLabel = DynamicLabel.label("Feature");
+    private static Label disorderLabel = DynamicLabel.label("Disorder");
+    private static Label runInfoLabel = DynamicLabel.label("RunInfo");
+
+    //relationships
+    private static RelationshipType hasHetVariantRelationship = DynamicRelationshipType.withName("HAS_HET_VARIANT");
+    private static RelationshipType hasHomVariantRelationship = DynamicRelationshipType.withName("HAS_HOM_VARIANT");
+    private static RelationshipType hasInSymbolRelationship = DynamicRelationshipType.withName("IN_SYMBOL");
+    private static RelationshipType hasInFeatureRelationship = DynamicRelationshipType.withName("IN_FEATURE");
+    private static RelationshipType hasUnknownConsequenceRelationship = DynamicRelationshipType.withName("HAS_UNKNOWN_CONSEQUENCE");
+    private static RelationshipType hasAssociatedDisorderRelationship = DynamicRelationshipType.withName("HAS_ASSOCIATED_DISORDER");
+    private static RelationshipType hasAnalysisRelationship = DynamicRelationshipType.withName("HAS_ANALYSIS");
+
     public static void registerShutdownHook( final GraphDatabaseService graphDb )
     {
         // Registers a shutdown hook for the Neo4j instance so that it
@@ -289,4 +311,57 @@ public class Neo4j{
 
         return false;
     }
+
+    public static Label getSampleLabel() {
+        return sampleLabel;
+    }
+    public static Label getVariantLabel() {
+        return variantLabel;
+    }
+    public static Label getAutoChromLabel() {
+        return autoChromLabel;
+    }
+    public static Label getSexChromLabel() {
+        return sexChromLabel;
+    }
+    public static Label getAnnotationLabel() {
+        return annotationLabel;
+    }
+    public static Label getSymbolLabel() {
+        return symbolLabel;
+    }
+    public static Label getCanonicalLabel() {
+        return canonicalLabel;
+    }
+    public static Label getFeatureLabel() {
+        return featureLabel;
+    }
+    public static Label getDisorderLabel() {
+        return disorderLabel;
+    }
+    public static Label getRunInfoLabel() {
+        return runInfoLabel;
+    }
+    public static RelationshipType getHasHetVariantRelationship() {
+        return hasHetVariantRelationship;
+    }
+    public static RelationshipType getHasHomVariantRelationship() {
+        return hasHomVariantRelationship;
+    }
+    public static RelationshipType getHasInSymbolRelationship() {
+        return hasInSymbolRelationship;
+    }
+    public static RelationshipType getHasInFeatureRelationship() {
+        return hasInFeatureRelationship;
+    }
+    public static RelationshipType getHasUnknownConsequenceRelationship() {
+        return hasUnknownConsequenceRelationship;
+    }
+    public static RelationshipType getHasAssociatedDisorderRelationship() {
+        return hasAssociatedDisorderRelationship;
+    }
+    public static RelationshipType getHasAnalysisRelationship() {
+        return hasAnalysisRelationship;
+    }
+
 }

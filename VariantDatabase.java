@@ -46,17 +46,6 @@ public class VariantDatabase {
     private HashMap<String, Node> symbolNodes = new HashMap<>(); //symbols added during this session
     private HashMap<String, Node> featureNodes = new HashMap<>(); //features added during this session
 
-    private Label sampleLabel = DynamicLabel.label("Sample");
-    private Label variantLabel = DynamicLabel.label("Variant");
-    private Label autoChromLabel = DynamicLabel.label("AutoChrom");
-    private Label sexChromLabel = DynamicLabel.label("SexChrom");
-    private Label annotationLabel = DynamicLabel.label("Annotation");
-    private Label symbolLabel = DynamicLabel.label("Symbol");
-    private Label canonicalLabel = DynamicLabel.label("Canonical");
-    private Label featureLabel = DynamicLabel.label("Feature");
-    private Label disorderLabel = DynamicLabel.label("Disorder");
-    private Label runInfoLabel = DynamicLabel.label("RunInfo");
-
     public VariantDatabase(VCFFileReader variantVcfFileReader, VCFFileReader annotationVcfFileReader, File neo4jDBPath, HashMap<String, HashSet<String>> geneMap2){
         this.variantVcfFileReader = variantVcfFileReader;
         this.neo4jDBPath = neo4jDBPath;
@@ -64,16 +53,6 @@ public class VariantDatabase {
         this.geneMap2 = geneMap2;
     }
 
-    private enum relTypes implements RelationshipType
-    {
-        HAS_HET_VARIANT,
-        HAS_HOM_VARIANT,
-        IN_SYMBOL,
-        IN_FEATURE,
-        HAS_UNKNOWN_CONSEQUENCE,
-        HAS_ASSOCIATED_DISORDER,
-        HAS_ANALYSIS
-    }
     public void startDatabase(){
         log.log(Level.INFO, "Starting database ...");
 
@@ -86,16 +65,16 @@ public class VariantDatabase {
     public void createIndexes() {
         log.log(Level.INFO, "Adding constraints ...");
 
-        Neo4j.createConstraint(graphDb, sampleLabel, "SampleId");
-        Neo4j.createConstraint(graphDb, variantLabel, "VariantId");
-        Neo4j.createConstraint(graphDb, variantLabel, "RsId");
-        Neo4j.createConstraint(graphDb, featureLabel, "FeatureId");
-        Neo4j.createConstraint(graphDb, canonicalLabel, "FeatureId");
-        Neo4j.createConstraint(graphDb, symbolLabel, "SymbolId");
-        Neo4j.createConstraint(graphDb, disorderLabel, "Title");
-        Neo4j.createConstraint(graphDb, runInfoLabel, "AnalysisId");
-        Neo4j.createIndex(graphDb, runInfoLabel, "LibraryId");
-        Neo4j.createIndex(graphDb, runInfoLabel, "RunId");
+        Neo4j.createConstraint(graphDb, Neo4j.getSexChromLabel(), "SampleId");
+        Neo4j.createConstraint(graphDb, Neo4j.getVariantLabel(), "VariantId");
+        Neo4j.createConstraint(graphDb, Neo4j.getVariantLabel(), "RsId");
+        Neo4j.createConstraint(graphDb, Neo4j.getFeatureLabel(), "FeatureId");
+        Neo4j.createConstraint(graphDb, Neo4j.getCanonicalLabel(), "FeatureId");
+        Neo4j.createConstraint(graphDb, Neo4j.getSymbolLabel(), "SymbolId");
+        Neo4j.createConstraint(graphDb, Neo4j.getDisorderLabel(), "Title");
+        Neo4j.createConstraint(graphDb, Neo4j.getRunInfoLabel(), "AnalysisId");
+        Neo4j.createIndex(graphDb, Neo4j.getRunInfoLabel(), "LibraryId");
+        Neo4j.createIndex(graphDb, Neo4j.getRunInfoLabel(), "RunId");
     }
 
     public void loadVCFFiles() throws InvalidPropertiesFormatException {
@@ -111,7 +90,7 @@ public class VariantDatabase {
             ++n;
 
             if (n > 250){
-                //break;
+                break;
             }
 
             if (!variant.isFiltered() && variant.isVariant()){
@@ -209,7 +188,7 @@ public class VariantDatabase {
         for (int n = 0; n < sampleIds.size(); ++n){
 
             //add sample
-            Node sampleIdNode = Neo4j.matchOrCreateUniqueNode(graphDb, sampleLabel, "SampleId", sampleIds.get(n));
+            Node sampleIdNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getSampleLabel(), "SampleId", sampleIds.get(n));
 
             //add run info
             properties.put("LibraryId", libraryId);
@@ -217,11 +196,11 @@ public class VariantDatabase {
             properties.put("SampleNo", n);
             properties.put("AnalysisId", libraryId + "_" + n + "_" + runId);
 
-            Node runInfoNode = Neo4j.addNode(graphDb, runInfoLabel, properties);
+            Node runInfoNode = Neo4j.addNode(graphDb, Neo4j.getRunInfoLabel(), properties);
             properties.clear();
 
             //link sample and runInfo
-            Neo4j.createRelationship(graphDb, sampleIdNode, runInfoNode, relTypes.HAS_ANALYSIS, properties, false);
+            Neo4j.createRelationship(graphDb, sampleIdNode, runInfoNode, Neo4j.getHasAnalysisRelationship(), properties, false);
             runInfoNodes.put(sampleIds.get(n), runInfoNode);
         }
 
@@ -249,7 +228,7 @@ public class VariantDatabase {
                     genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
                     genomeVariant.convertToMinimalRepresentation();
 
-                    addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), relTypes.HAS_HOM_VARIANT);
+                    addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), Neo4j.getHasHomVariantRelationship());
 
                 } else if (genotype.isHet()){
 
@@ -258,7 +237,7 @@ public class VariantDatabase {
                     genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(1).getBaseString());
                     genomeVariant.convertToMinimalRepresentation();
 
-                    addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), relTypes.HAS_HET_VARIANT);
+                    addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), Neo4j.getHasHetVariantRelationship());
 
                     if (genotype.isHetNonRef()){
 
@@ -267,7 +246,7 @@ public class VariantDatabase {
                         genomeVariant = new GenomeVariant(vcfRecord.getContig(), vcfRecord.getStart(), vcfRecord.getReference().getBaseString(), genotype.getAlleles().get(0).getBaseString());
                         genomeVariant.convertToMinimalRepresentation();
 
-                        addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), relTypes.HAS_HET_VARIANT);
+                        addVariantNodesAndGenotypeRelationshipsHelper(genomeVariant, genotype.getGQ(), runInfoNodes.get(genotype.getSampleName()), Neo4j.getHasHetVariantRelationship());
 
                     }
 
@@ -292,7 +271,7 @@ public class VariantDatabase {
 
                 //add symbols
                 if (annotation.getSymbol() != null && !annotation.getSymbol().equals("") && !symbolNodes.containsKey(annotation.getSymbol())){
-                    ArrayList<Node> nodes = Neo4j.getNodes(graphDb, symbolLabel, "SymbolId", annotation.getSymbol());
+                    ArrayList<Node> nodes = Neo4j.getNodes(graphDb, Neo4j.getSymbolLabel(), "SymbolId", annotation.getSymbol());
 
                     if (nodes.size() == 0){
 
@@ -300,7 +279,7 @@ public class VariantDatabase {
                         properties.put("SymbolId", annotation.getSymbol());
                         if (annotation.getSymbolSource() != null && !annotation.getSymbolSource().equals("")) properties.put("SymbolSource", annotation.getSymbolSource());
 
-                        symbolNodes.put(annotation.getSymbol(), Neo4j.addNode(graphDb, symbolLabel, properties));
+                        symbolNodes.put(annotation.getSymbol(), Neo4j.addNode(graphDb, Neo4j.getSymbolLabel(), properties));
 
                     } else {
                         symbolNodes.put(annotation.getSymbol(), nodes.get(0));
@@ -310,7 +289,7 @@ public class VariantDatabase {
 
                 //add feature
                 if (annotation.getFeature() != null && !annotation.getFeature().equals("") && !featureNodes.containsKey(annotation.getFeature())){
-                    ArrayList<Node> nodes = Neo4j.getNodes(graphDb, featureLabel, "FeatureId", annotation.getFeature());
+                    ArrayList<Node> nodes = Neo4j.getNodes(graphDb, Neo4j.getFeatureLabel(), "FeatureId", annotation.getFeature());
 
                     if (nodes.size() == 0) {
 
@@ -321,9 +300,9 @@ public class VariantDatabase {
                         if(annotation.getStrand() != null) properties.put("Strand", annotation.getStrand());
                         if(annotation.getExon() != null) properties.put("TotalExons", annotation.getExon().split("/")[1]);
 
-                        featureNodes.put(annotation.getFeature(), Neo4j.addNode(graphDb, featureLabel, properties));
+                        featureNodes.put(annotation.getFeature(), Neo4j.addNode(graphDb, Neo4j.getFeatureLabel(), properties));
 
-                        if (annotation.getCanonical() != null && annotation.getCanonical().equals("YES")) Neo4j.addNodeLabel(graphDb, featureNodes.get(annotation.getFeature()), canonicalLabel);
+                        if (annotation.getCanonical() != null && annotation.getCanonical().equals("YES")) Neo4j.addNodeLabel(graphDb, featureNodes.get(annotation.getFeature()), Neo4j.getCanonicalLabel());
 
                     } else {
                         featureNodes.put(annotation.getFeature(), nodes.get(0));
@@ -338,14 +317,14 @@ public class VariantDatabase {
                 if(annotation.getExon() != null) properties.put("Exon", annotation.getExon().split("/")[0]);
                 if(annotation.getIntron() != null) properties.put("Intron", annotation.getIntron().split("/")[0]);
 
-                annotationNodes.get(variant.getKey()).put(annotation.getFeature(), Neo4j.addNode(graphDb, annotationLabel, properties));
+                annotationNodes.get(variant.getKey()).put(annotation.getFeature(), Neo4j.addNode(graphDb, Neo4j.getAnnotationLabel(), properties));
 
                 //add omim disorders and link to disease
                 properties.clear();
                 if (geneMap2.containsKey(annotation.getSymbol())) {
                     for (String disorderTitle : geneMap2.get(annotation.getSymbol())){
-                        Node node = Neo4j.matchOrCreateUniqueNode(graphDb, disorderLabel, "Title", disorderTitle);
-                        Neo4j.createRelationship(graphDb, symbolNodes.get(annotation.getSymbol()), node, relTypes.HAS_ASSOCIATED_DISORDER, properties, false);
+                        Node node = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getDisorderLabel(), "Title", disorderTitle);
+                        Neo4j.createRelationship(graphDb, symbolNodes.get(annotation.getSymbol()), node, Neo4j.getHasAssociatedDisorderRelationship(), properties, false);
                     }
                 }
 
@@ -356,17 +335,17 @@ public class VariantDatabase {
                         Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), DynamicRelationshipType.withName("HAS_" + consequence.toUpperCase() + "_CONSEQUENCE"), properties, false);
                     }
                 } else {
-                    Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), relTypes.HAS_UNKNOWN_CONSEQUENCE, properties, false);
+                    Neo4j.createRelationship(graphDb, newVariantNodes.get(variant.getKey()), annotationNodes.get(variant.getKey()).get(annotation.getFeature()), Neo4j.getHasUnknownConsequenceRelationship(), properties, false);
                 }
 
                 //add in feature relationship
                 if (annotationNodes.get(variant.getKey()).get(annotation.getFeature()) != null && featureNodes.get(annotation.getFeature()) != null){
-                    Neo4j.createRelationship(graphDb, annotationNodes.get(variant.getKey()).get(annotation.getFeature()), featureNodes.get(annotation.getFeature()), relTypes.IN_FEATURE, new HashMap<String, Object>(), false);
+                    Neo4j.createRelationship(graphDb, annotationNodes.get(variant.getKey()).get(annotation.getFeature()), featureNodes.get(annotation.getFeature()), Neo4j.getHasInFeatureRelationship(), new HashMap<String, Object>(), false);
                 }
 
                 //add in symbol relationship
                 if (featureNodes.get(annotation.getFeature()) != null && symbolNodes.get(annotation.getSymbol()) != null){
-                    Neo4j.createRelationship(graphDb, featureNodes.get(annotation.getFeature()), symbolNodes.get(annotation.getSymbol()), relTypes.IN_SYMBOL, new HashMap<String, Object>(), false);
+                    Neo4j.createRelationship(graphDb, featureNodes.get(annotation.getFeature()), symbolNodes.get(annotation.getSymbol()), Neo4j.getHasInSymbolRelationship(), new HashMap<String, Object>(), false);
                 }
 
             }
@@ -379,7 +358,7 @@ public class VariantDatabase {
         HashMap<String, Object> properties = new HashMap<>();
 
         if (!newVariantNodes.containsKey(genomeVariant) && !existingNodes.containsKey(genomeVariant)) {
-            ArrayList<Node> nodes = Neo4j.getNodes(graphDb, variantLabel, "VariantId", genomeVariant.getConcatenatedVariant());
+            ArrayList<Node> nodes = Neo4j.getNodes(graphDb, Neo4j.getVariantLabel(), "VariantId", genomeVariant.getConcatenatedVariant());
 
             if (nodes.size() == 0){
                 properties.put("VariantId", genomeVariant.getConcatenatedVariant());
@@ -389,12 +368,12 @@ public class VariantDatabase {
                     properties.put(iter.getKey(), iter.getValue());
                 }
 
-                newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, variantLabel, properties));
+                newVariantNodes.put(genomeVariant, Neo4j.addNode(graphDb, Neo4j.getVariantLabel(), properties));
 
                 if (genomeVariant.getContig().equals("X") || genomeVariant.getContig().equals("Y")){
-                    Neo4j.addNodeLabel(graphDb, newVariantNodes.get(genomeVariant), sexChromLabel);
+                    Neo4j.addNodeLabel(graphDb, newVariantNodes.get(genomeVariant), Neo4j.getSexChromLabel());
                 } else if (Integer.parseInt(genomeVariant.getContig()) >= 1 && Integer.parseInt(genomeVariant.getContig()) <= 22){
-                    Neo4j.addNodeLabel(graphDb, newVariantNodes.get(genomeVariant), autoChromLabel);
+                    Neo4j.addNodeLabel(graphDb, newVariantNodes.get(genomeVariant), Neo4j.getAutoChromLabel());
                 }
 
             } else {
