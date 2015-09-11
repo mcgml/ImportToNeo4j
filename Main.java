@@ -55,10 +55,12 @@ public class Main {
         if (overwriteDB) variantDatabase.createIndexes();
 
         variantDatabase.loadVCFFiles();
+        variantDatabase.addUsers();
 
         variantDatabase.addSampleAndRunInfoNodes();
         variantDatabase.addVariantNodesAndGenotypeRelationships();
         variantDatabase.addAnnotations();
+        variantDatabase.addGenePanels();
 
         variantDatabase.shutdownDatabase();
 

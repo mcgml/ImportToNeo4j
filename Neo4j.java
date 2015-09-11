@@ -12,14 +12,18 @@ public class Neo4j{
     //labels
     private static Label sampleLabel = DynamicLabel.label("Sample");
     private static Label variantLabel = DynamicLabel.label("Variant");
-    private static Label autoChromLabel = DynamicLabel.label("AutoChrom");
-    private static Label sexChromLabel = DynamicLabel.label("SexChrom");
+    private static Label autoChromosomeLabel = DynamicLabel.label("Autosome");
+    private static Label xChromosomeLabel = DynamicLabel.label("X");
+    private static Label yChromosomeLabel = DynamicLabel.label("Y");
+    private static Label mtChromosomeLabel = DynamicLabel.label("MT");
     private static Label annotationLabel = DynamicLabel.label("Annotation");
     private static Label symbolLabel = DynamicLabel.label("Symbol");
     private static Label canonicalLabel = DynamicLabel.label("Canonical");
     private static Label featureLabel = DynamicLabel.label("Feature");
     private static Label disorderLabel = DynamicLabel.label("Disorder");
     private static Label runInfoLabel = DynamicLabel.label("RunInfo");
+    private static Label virtualPanelLabel = DynamicLabel.label("VirtualPanel");
+    private static Label userLabel = DynamicLabel.label("User");
 
     //relationships
     private static RelationshipType hasHetVariantRelationship = DynamicRelationshipType.withName("HAS_HET_VARIANT");
@@ -29,6 +33,8 @@ public class Neo4j{
     private static RelationshipType hasUnknownConsequenceRelationship = DynamicRelationshipType.withName("HAS_UNKNOWN_CONSEQUENCE");
     private static RelationshipType hasAssociatedDisorderRelationship = DynamicRelationshipType.withName("HAS_ASSOCIATED_DISORDER");
     private static RelationshipType hasAnalysisRelationship = DynamicRelationshipType.withName("HAS_ANALYSIS");
+    private static RelationshipType hasDesignedBy = DynamicRelationshipType.withName("DESIGNED_BY");
+    private static RelationshipType hasContainsSymbol = DynamicRelationshipType.withName("CONTAINS_SYMBOL");
 
     public static void registerShutdownHook( final GraphDatabaseService graphDb )
     {
@@ -318,11 +324,17 @@ public class Neo4j{
     public static Label getVariantLabel() {
         return variantLabel;
     }
-    public static Label getAutoChromLabel() {
-        return autoChromLabel;
+    public static Label getAutoChromosomeLabel() {
+        return autoChromosomeLabel;
     }
-    public static Label getSexChromLabel() {
-        return sexChromLabel;
+    public static Label getXChromosomeLabel() {
+        return xChromosomeLabel;
+    }
+    public static Label getYChromosomeLabel() {
+        return yChromosomeLabel;
+    }
+    public static Label getMtChromosomeLabel() {
+        return mtChromosomeLabel;
     }
     public static Label getAnnotationLabel() {
         return annotationLabel;
@@ -341,6 +353,12 @@ public class Neo4j{
     }
     public static Label getRunInfoLabel() {
         return runInfoLabel;
+    }
+    public static Label getVirtualPanelLabel() {
+        return virtualPanelLabel;
+    }
+    public static Label getUserLabel() {
+        return userLabel;
     }
     public static RelationshipType getHasHetVariantRelationship() {
         return hasHetVariantRelationship;
@@ -362,6 +380,12 @@ public class Neo4j{
     }
     public static RelationshipType getHasAnalysisRelationship() {
         return hasAnalysisRelationship;
+    }
+    public static RelationshipType getHasContainsSymbol() {
+        return hasContainsSymbol;
+    }
+    public static RelationshipType getHasDesignedBy() {
+        return hasDesignedBy;
     }
 
 }
