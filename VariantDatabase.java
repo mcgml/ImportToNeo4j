@@ -41,6 +41,9 @@ public class VariantDatabase {
     private HashMap<String, Node> featureNodes = new HashMap<>(); //features added during this session
     private Node userNode;
 
+    private String libraryId = "K15-0001"; //TODO extract from VCF - Shire worklist
+    private String runId = "150730_D00501_0048_Bhb08aadxx"; //TODO extract from VCF - flowcell/chipId
+
     public VariantDatabase(VCFFileReader variantVcfFileReader, VCFFileReader annotationVcfFileReader, File neo4jDBPath, HashMap<String, HashSet<String>> geneMap2){
         this.variantVcfFileReader = variantVcfFileReader;
         this.neo4jDBPath = neo4jDBPath;
@@ -189,10 +192,6 @@ public class VariantDatabase {
 
         HashMap<String, Object> properties = new HashMap<>();
         ArrayList<String> sampleIds = variantVcfFileReader.getFileHeader().getSampleNamesInOrder();
-
-        String libraryId = "K15-0000"; //TODO extract from VCF - Shire worklist
-        String runId = "150716_D00501_0047_BHB092ADXX"; //TODO extract from VCF - flowcell/chipId
-        //TODO get worksheet position (n)
 
         for (short n = 0; n < sampleIds.size(); ++n){
 
