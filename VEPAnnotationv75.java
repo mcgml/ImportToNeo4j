@@ -171,9 +171,9 @@ public class VEPAnnotationv75 {
                 if (subFields[1].contains("(") && subFields[1].contains(")")){
                     subFields = subFields[1].split("\\(");
                     subFields = subFields[1].split("\\)");
-                    if (subFields[0].equals("p.%3D")) this.hgvsProtein = "p.="; else this.hgvsProtein = subFields[0];
+                    if (subFields[0].equals("p.%3D")) this.hgvsProtein = null; else this.hgvsProtein = subFields[0];
                 } else {
-                    if (subFields[1].equals("p.%3D")) this.hgvsProtein = "p.="; else this.hgvsProtein = subFields[1];
+                    if (subFields[1].equals("p.%3D")) this.hgvsProtein = null; else this.hgvsProtein = subFields[1];
                 }
             }
 

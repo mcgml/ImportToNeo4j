@@ -379,7 +379,7 @@ public class VariantDatabase {
         log.log(Level.INFO, "Adding virtual panels ...");
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put("PanelName", "Breast Cancer");
+        properties.put("PanelName", "BreastCancer");
 
         Node symbolNode;
 
