@@ -5,9 +5,7 @@ import org.neo4j.io.fs.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.InvalidPropertiesFormatException;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,14 +53,12 @@ public class Main {
         if (overwriteDB) variantDatabase.createIndexes();
 
         variantDatabase.loadVCFFiles();
-        variantDatabase.addUsers();
+        if (overwriteDB) variantDatabase.addUsers();
 
         variantDatabase.addSampleAndRunInfoNodes();
         variantDatabase.addVariantNodesAndGenotypeRelationships();
         variantDatabase.addAnnotations();
-        variantDatabase.addGenePanels();
-
-        variantDatabase.shutdownDatabase();
+        if (overwriteDB) variantDatabase.addGenePanels();
 
         variantVcfFileReader.close();
         annotationVcfFileReader.close();

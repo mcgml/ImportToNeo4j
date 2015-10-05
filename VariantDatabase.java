@@ -98,7 +98,7 @@ public class VariantDatabase {
             ++n;
 
             if (n > 250){
-                //break;
+                break;
             }
 
             if (!variant.isFiltered() && variant.isVariant()){
@@ -379,17 +379,32 @@ public class VariantDatabase {
         log.log(Level.INFO, "Adding virtual panels ...");
 
         HashMap<String, Object> properties = new HashMap<>();
+        Node symbolNode, virtualPanel;
+
+        //add BREAST CANCER
         properties.put("PanelName", "BreastCancer");
-
-        Node symbolNode;
-
-        Node virtualPanel = Neo4j.addNode(graphDb, Neo4j.getVirtualPanelLabel(), properties);
+        virtualPanel = Neo4j.addNode(graphDb, Neo4j.getVirtualPanelLabel(), properties);
         properties.clear();
 
         symbolNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getSymbolLabel(), "SymbolId", "BRCA1");
         Neo4j.createRelationship(graphDb, virtualPanel, symbolNode, Neo4j.getHasContainsSymbol(), properties, true);
 
         symbolNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getSymbolLabel(), "SymbolId", "BRCA2");
+        Neo4j.createRelationship(graphDb, virtualPanel, symbolNode, Neo4j.getHasContainsSymbol(), properties, true);
+
+        properties.put("Date", System.currentTimeMillis());
+        Neo4j.createRelationship(graphDb, virtualPanel, userNode, Neo4j.getHasDesignedBy(), properties, true);
+
+        //add TS
+        properties.clear();
+        properties.put("PanelName", "TuberousSclerosis");
+        virtualPanel = Neo4j.addNode(graphDb, Neo4j.getVirtualPanelLabel(), properties);
+        properties.clear();
+
+        symbolNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getSymbolLabel(), "SymbolId", "TSC1");
+        Neo4j.createRelationship(graphDb, virtualPanel, symbolNode, Neo4j.getHasContainsSymbol(), properties, true);
+
+        symbolNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getSymbolLabel(), "SymbolId", "TSC2");
         Neo4j.createRelationship(graphDb, virtualPanel, symbolNode, Neo4j.getHasContainsSymbol(), properties, true);
 
         properties.put("Date", System.currentTimeMillis());
@@ -436,7 +451,7 @@ public class VariantDatabase {
 
     public void shutdownDatabase(){
         log.log(Level.INFO, "Shutting down database ...");
-        graphDb.shutdown();
+        Neo4j.shutdownDatabase(graphDb);
     }
 
 }

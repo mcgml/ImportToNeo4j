@@ -36,19 +36,36 @@ public class Neo4j{
     private static RelationshipType hasDesignedBy = DynamicRelationshipType.withName("DESIGNED_BY");
     private static RelationshipType hasContainsSymbol = DynamicRelationshipType.withName("CONTAINS_SYMBOL");
 
+    //population frequencies
+    public enum Population {
+        onekGPhase3_EAS_AF,
+        onekGPhase3_EUR_AF,
+        onekGPhase3_AFR_AF,
+        onekGPhase3_AMR_AF,
+        onekGPhase3_SAS_AF,
+        ExAC_AFR_AF,
+        ExAC_AMR_AF,
+        ExAC_EAS_AF,
+        ExAC_FIN_AF,
+        ExAC_NFE_AF,
+        ExAC_OTH_AF,
+        ExAC_SAS_AF
+    }
+
+    public static void shutdownDatabase(final GraphDatabaseService graphDb){
+        graphDb.shutdown();
+    }
     public static void registerShutdownHook( final GraphDatabaseService graphDb )
     {
         // Registers a shutdown hook for the Neo4j instance so that it
         // shuts down nicely when the VM exits (even if you "Ctrl-C" the
         // running application).
-        Runtime.getRuntime().addShutdownHook( new Thread()
-        {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
-            public void run()
-            {
+            public void run() {
                 graphDb.shutdown();
             }
-        } );
+        });
     }
     public static void createIndexAndWait(final GraphDatabaseService graphDb, final Label label, final String property){
 
@@ -67,6 +84,7 @@ public class Neo4j{
         {
             Schema schema = graphDb.schema();
             schema.awaitIndexOnline(indexDefinition, 10, TimeUnit.SECONDS);
+            tx.success();
         }
 
     }
@@ -145,14 +163,15 @@ public class Neo4j{
 
             }
 
+            tx.success();
         }
 
         return nodes;
     }
-    public static ArrayList<Long> getNodeIDs(final GraphDatabaseService graphDb, final Label label, final String field, final Object value){
+    public static ArrayList<Long> getNodeIds(final GraphDatabaseService graphDb, final Label label, final String field, final Object value){
 
         Node node;
-        ArrayList<Long> nodeIDs = new ArrayList<>();
+        ArrayList<Long> nodeIds = new ArrayList<>();
 
         try ( Transaction tx = graphDb.beginTx() )
         {
@@ -162,14 +181,15 @@ public class Neo4j{
                 while ( users.hasNext() )
                 {
                     node = users.next();
-                    nodeIDs.add(node.getId());
+                    nodeIds.add(node.getId());
                 }
 
             }
 
+            tx.success();
         }
 
-        return nodeIDs;
+        return nodeIds;
     }
     public static Node matchOrCreateUniqueNode(final GraphDatabaseService graphDb, Label label, String field, Object value) throws InvalidPropertiesFormatException{
         ArrayList<Node> nodes = getNodes(graphDb, label, field, value);
@@ -189,7 +209,7 @@ public class Neo4j{
         ArrayList<Map<String, Object>> results = new ArrayList<>();
 
         try ( Transaction tx = graphDb.beginTx();
-              Result result = graphDb.execute( cypherQuery ) )
+              Result result = graphDb.execute(cypherQuery) )
         {
             while ( result.hasNext() )
             {
@@ -236,6 +256,7 @@ public class Neo4j{
 
             }
 
+            tx.success();
         }
 
         return false;
@@ -283,6 +304,42 @@ public class Neo4j{
 
             }
 
+            tx.success();
+        }
+
+        return nodes;
+    }
+    public static ArrayList<Node> findNeighbourNodesWithParameters(final GraphDatabaseService graphDb, Node startNode, Label endLabel, Direction direction, RelationshipType relationshipType, HashMap<String, Object> properties){
+
+        ArrayList<Node> nodes = new ArrayList<>();
+
+        try (Transaction tx = graphDb.beginTx()){
+            for (Relationship relationship : startNode.getRelationships(direction, relationshipType)){
+                boolean hasSameProperties = true;
+
+                //get connecting node
+                Node tempNode = relationship.getOtherNode(startNode);
+
+                //check node has required label
+                if (tempNode.hasLabel(endLabel)){
+
+                    //check end node has properties
+                    for (Map.Entry<String, Object> property : properties.entrySet()){
+
+                        if (!tempNode.getProperty(property.getKey()).equals(property.getValue())){
+                            hasSameProperties = false;
+                            break;
+                        }
+                    }
+
+                    if (hasSameProperties){
+                        nodes.add(tempNode);
+                    }
+
+                }
+
+            }
+            tx.success();
         }
 
         return nodes;
@@ -313,6 +370,7 @@ public class Neo4j{
                 }
 
             }
+            tx.success();
         }
 
         return false;
