@@ -43,8 +43,11 @@ public class VariantDatabase {
     private HashMap<String, Node> featureNodes = new HashMap<>(); //features added during this session
     private Node userNode;
 
-    private String libraryId = "K15-0001"; //TODO extract from VCF - Shire worklist
-    private String runId = "150730_D00501_0048_Bhb08aadxx"; //TODO extract from VCF - flowcell/chipId
+    private String libraryId = "K15-0000"; //TODO extract from VCF - Shire worklist
+    private String runId = "150716_D00501_0047_BHB092ADXX"; //TODO extract from VCF - flowcell/chipId
+    private String panelName = "TruSight One"; //TODO extract from VCF - assay type
+    private String pipelineName = "IlluminaTruSightOne"; //todo get from VCF
+    private int pipelineVersion = 1; //todo get from VCF
 
     public VariantDatabase(VCFFileReader variantVcfFileReader, VCFFileReader annotationVcfFileReader, File neo4jDBPath, HashMap<String, HashSet<String>> geneMap2){
         this.variantVcfFileReader = variantVcfFileReader;
@@ -205,6 +208,9 @@ public class VariantDatabase {
             properties.put("RunId", runId);
             properties.put("SampleNo", n);
             properties.put("AnalysisId", libraryId + "_" + n + "_" + runId);
+            properties.put("PanelName", panelName);
+            properties.put("PipelineName", pipelineName);
+            properties.put("PipelineVersion", pipelineVersion);
 
             Node runInfoNode = Neo4j.addNode(graphDb, Neo4j.getRunInfoLabel(), properties); //need to crash if already exists
             properties.clear();
