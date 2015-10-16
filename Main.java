@@ -58,7 +58,7 @@ public class Main {
         variantDatabase.addSampleAndRunInfoNodes();
         variantDatabase.addVariantNodesAndGenotypeRelationships();
         variantDatabase.addAnnotations();
-        if (overwriteDB) variantDatabase.addGenePanels();
+        //if (overwriteDB) variantDatabase.addGenePanels();
 
         variantVcfFileReader.close();
         annotationVcfFileReader.close();

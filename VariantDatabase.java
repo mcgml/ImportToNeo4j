@@ -22,6 +22,8 @@ import java.util.logging.Logger;
 //TODO add pipeline name & version
 //todo add ddd afs
 //todo add clinvar
+//todo deal with mixed genotypes
+//todo add shire info and seq info
 
 public class VariantDatabase {
     private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());
@@ -97,9 +99,9 @@ public class VariantDatabase {
             VariantContext variant = variantContextIterator.next();
             ++n;
 
-            if (n > 250){
+            /*if (n > 250){
                 break;
-            }
+            }*/
 
             if (!variant.isFiltered() && variant.isVariant()){
                 vcfBody.add(variant);
@@ -225,7 +227,11 @@ public class VariantDatabase {
             while (genotypeIterator.hasNext()) {
                 Genotype genotype = genotypeIterator.next();
 
-                if (genotype.isNoCall() || genotype.isHomRef() || genotype.isMixed()) continue;
+                if (genotype.isNoCall() || genotype.isHomRef()) continue;
+                if (genotype.isMixed()){
+                    log.log(Level.WARNING, genotype.getSampleName() + ": " + vcfRecord.getContig() + " " + vcfRecord.getStart() + " " + vcfRecord.getReference() + vcfRecord.getAlternateAlleles().toString() + " has mixed genotype and could not be added.");
+                    continue;
+                }
                 if (genotype.getPloidy() != 2 || genotype.getAlleles().size() != 2) throw new InvalidPropertiesFormatException("Allele " + genotype.getAlleles().toString() + " is not diploid");
 
                 //add new variants to the DB
@@ -278,7 +284,7 @@ public class VariantDatabase {
                 if (!annotationNodes.containsKey(variant.getKey())) annotationNodes.put(variant.getKey(), new HashMap<String, Node>());
 
                 //add symbols
-                if (annotation.getSymbol() != null && !annotation.getSymbol().equals("")){
+                if (annotation.getSymbol() != null && !annotation.getSymbol().equals("") && annotation.getSymbolSource().equals("HGNC")){
 
                     if (!symbolNodes.containsKey(annotation.getSymbol())){
 
@@ -288,8 +294,6 @@ public class VariantDatabase {
 
                             //add symbol
                             properties.put("SymbolId", annotation.getSymbol());
-                            if (annotation.getSymbolSource() != null && !annotation.getSymbolSource().equals("")) properties.put("SymbolSource", annotation.getSymbolSource());
-
                             symbolNodes.put(annotation.getSymbol(), Neo4j.addNode(graphDb, Neo4j.getSymbolLabel(), properties));
 
                         } else {
@@ -382,7 +386,7 @@ public class VariantDatabase {
         Node symbolNode, virtualPanel;
 
         //add BREAST CANCER
-        properties.put("PanelName", "BreastCancer");
+        properties.put("PanelName", "Breast Cancer");
         virtualPanel = Neo4j.addNode(graphDb, Neo4j.getVirtualPanelLabel(), properties);
         properties.clear();
 
@@ -397,7 +401,7 @@ public class VariantDatabase {
 
         //add TS
         properties.clear();
-        properties.put("PanelName", "TuberousSclerosis");
+        properties.put("PanelName", "Tuberous Sclerosis");
         virtualPanel = Neo4j.addNode(graphDb, Neo4j.getVirtualPanelLabel(), properties);
         properties.clear();
 
