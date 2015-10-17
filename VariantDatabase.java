@@ -80,7 +80,6 @@ public class VariantDatabase {
         Neo4j.createConstraint(graphDb, Neo4j.getFeatureLabel(), "FeatureId");
         Neo4j.createConstraint(graphDb, Neo4j.getCanonicalLabel(), "FeatureId");
         Neo4j.createConstraint(graphDb, Neo4j.getSymbolLabel(), "SymbolId");
-        Neo4j.createConstraint(graphDb, Neo4j.getDisorderLabel(), "Title");
         Neo4j.createConstraint(graphDb, Neo4j.getVirtualPanelLabel(), "PanelName");
         Neo4j.createConstraint(graphDb, Neo4j.getUserLabel(), "UserName");
 
