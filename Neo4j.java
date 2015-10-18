@@ -33,6 +33,7 @@ public class Neo4j{
     private static RelationshipType hasAnalysisRelationship = DynamicRelationshipType.withName("HAS_ANALYSIS");
     private static RelationshipType hasDesignedBy = DynamicRelationshipType.withName("DESIGNED_BY");
     private static RelationshipType hasContainsSymbol = DynamicRelationshipType.withName("CONTAINS_SYMBOL");
+    private static RelationshipType hasProteinCodingBiotypeRel = DynamicRelationshipType.withName("HAS_PROTEIN_CODING_BIOTYPE");
 
     //population frequencies
     public enum Population {
@@ -436,6 +437,9 @@ public class Neo4j{
     }
     public static RelationshipType getHasDesignedBy() {
         return hasDesignedBy;
+    }
+    public static RelationshipType getHasProteinCodingBiotypeRel() {
+        return hasProteinCodingBiotypeRel;
     }
 
 }
