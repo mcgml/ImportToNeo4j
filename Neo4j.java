@@ -31,9 +31,10 @@ public class Neo4j{
     private static RelationshipType hasInFeatureRelationship = DynamicRelationshipType.withName("IN_FEATURE");
     private static RelationshipType hasUnknownConsequenceRelationship = DynamicRelationshipType.withName("HAS_UNKNOWN_CONSEQUENCE");
     private static RelationshipType hasAnalysisRelationship = DynamicRelationshipType.withName("HAS_ANALYSIS");
-    private static RelationshipType hasDesignedBy = DynamicRelationshipType.withName("DESIGNED_BY");
-    private static RelationshipType hasContainsSymbol = DynamicRelationshipType.withName("CONTAINS_SYMBOL");
-    private static RelationshipType hasProteinCodingBiotypeRel = DynamicRelationshipType.withName("HAS_PROTEIN_CODING_BIOTYPE");
+    private static RelationshipType hasDesignedByRelationship = DynamicRelationshipType.withName("DESIGNED_BY");
+    private static RelationshipType hasContainsSymbolRelationship = DynamicRelationshipType.withName("CONTAINS_SYMBOL");
+    private static RelationshipType hasProteinCodingBiotypeRelationship = DynamicRelationshipType.withName("HAS_PROTEIN_CODING_BIOTYPE");
+    private static RelationshipType hasAssociatedPathogenicityRelationship = DynamicRelationshipType.withName("HAS_ASSOCIATED_PATHOGENICITY");
 
     //population frequencies
     public enum Population {
@@ -433,13 +434,16 @@ public class Neo4j{
         return hasAnalysisRelationship;
     }
     public static RelationshipType getHasContainsSymbol() {
-        return hasContainsSymbol;
+        return hasContainsSymbolRelationship;
     }
     public static RelationshipType getHasDesignedBy() {
-        return hasDesignedBy;
+        return hasDesignedByRelationship;
     }
     public static RelationshipType getHasProteinCodingBiotypeRel() {
-        return hasProteinCodingBiotypeRel;
+        return hasProteinCodingBiotypeRelationship;
+    }
+    public static RelationshipType getHasAssociatedPathogenicityRelationship() {
+        return hasAssociatedPathogenicityRelationship;
     }
 
 }
