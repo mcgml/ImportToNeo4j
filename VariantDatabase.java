@@ -21,7 +21,6 @@ import java.util.logging.Logger;
 //TODO add pipeline name & version
 //todo add ddd afs
 //todo add clinvar
-//todo deal with mixed genotypes
 //todo add shire info and seq info
 
 public class VariantDatabase {
