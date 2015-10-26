@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 //todo add ddd afs
 //todo add clinvar
 //todo add shire info and seq info
+//todo add remote bam file path
 
 public class VariantDatabase {
     private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());
