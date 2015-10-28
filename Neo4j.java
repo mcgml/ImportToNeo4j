@@ -222,12 +222,10 @@ public class Neo4j{
 
         return results;
     }
-    public static void createRelationship(final GraphDatabaseService graphDb, Node node1, Node node2, RelationshipType type, HashMap<String, Object> properties, boolean checkDuplicates){
+    public static void createRelationship(final GraphDatabaseService graphDb, Node node1, Node node2, RelationshipType type, HashMap<String, Object> properties){
 
-        if (!checkDuplicates){
-            if (hasRelationship(graphDb, node1, node2, type, Direction.OUTGOING)){
-                return;
-            }
+        if (hasRelationship(graphDb, node1, node2, type, Direction.OUTGOING)){
+            return;
         }
 
         //add relationship
@@ -262,13 +260,13 @@ public class Neo4j{
 
         return false;
     }
-    public static void addNodeProperty(final GraphDatabaseService graphDb, Node node, HashMap<String, Object> properties){
+    public static void addNodeProperties(final GraphDatabaseService graphDb, Node node, HashMap<String, Object> properties){
 
         try (Transaction tx = graphDb.beginTx()) {
 
             //set properties
             for (Map.Entry<String, Object> property : properties.entrySet()){
-                node.setProperty(property.getKey(), property.getValue());
+                if (!node.hasProperty(property.getKey())) node.setProperty(property.getKey(), property.getValue());
             }
 
             tx.success();
@@ -458,10 +456,5 @@ public class Neo4j{
     public static RelationshipType getHasDesignedByRelationship() {
         return hasDesignedByRelationship;
     }
-    public static Label getyChromosomeLabel() {
-        return yChromosomeLabel;
-    }
-    public static Label getxChromosomeLabel() {
-        return xChromosomeLabel;
-    }
+
 }

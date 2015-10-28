@@ -1,6 +1,7 @@
 package nhs.genetics.cardiff;
 
 import htsjdk.variant.vcf.VCFFileReader;
+import org.neo4j.graphdb.ConstraintViolationException;
 import org.neo4j.io.fs.FileUtils;
 
 import java.io.File;
@@ -12,27 +13,33 @@ import java.util.logging.Logger;
 public class Main {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
+
     private static final double version = 0.3;
-    private static boolean newDatabase = false;
+    private static boolean newDatabase = false, addAnnotations = false;
 
     public static void main(String[] args) throws InvalidPropertiesFormatException {
 
         if (args.length < 2 || args.length > 3) {
             System.err.println("Usage: <VCF> <db>");
-            System.err.println("Options: -n new database");
+            System.err.println("Options: -n New database, -a Annotated VCF");
             System.exit(1);
         }
 
         log.log(Level.INFO, "ImportToNeo4j v" + version);
 
-        //update or overwrite
+        //update or overwrite, genotype or annotations?
         for (String arg : args){
-            if (args.equals("-n")){
+            if (arg.equals("-n")){
                 newDatabase = true;
+            } else if (arg.equals("-a")){
+                addAnnotations = true;
             }
         }
 
-        log.log(Level.INFO, "New database: " + newDatabase);
+        if (newDatabase && addAnnotations){
+            System.err.println("ERROR: Cannot create new database and add annotations. Check arguments.");
+            System.exit(1);
+        }
 
         if (newDatabase) {
             log.log(Level.INFO, "Deleting existing database");
@@ -51,21 +58,32 @@ public class Main {
 
         //create database object
         VariantDatabase variantDatabase = new VariantDatabase(variantVcfFileReader, new File(args[1]));
-
-        //create new DB
         variantDatabase.startDatabase();
-        if (newDatabase) variantDatabase.createIndexes();
 
-        variantDatabase.loadVCF();
-        if (newDatabase) variantDatabase.addUsers();
+        //add genotypes
+        if (!addAnnotations){
 
-        variantDatabase.addSampleAndRunInfoNodes();
-        variantDatabase.addVariantNodesAndGenotypeRelationships();
-        variantDatabase.addAnnotations();
-        if (newDatabase) variantDatabase.addGenePanels();
+            if (newDatabase) variantDatabase.createIndexes();
+            if (newDatabase) variantDatabase.addUsers();
+            if (newDatabase) variantDatabase.addGenePanels();
+
+            variantDatabase.populateRunMetaData();
+
+            try {
+                variantDatabase.addSampleAndRunInfoNodes();
+            } catch (ConstraintViolationException e){
+                log.log(Level.SEVERE, "One or more analyses already exist in the database, check input.");
+                System.exit(1);
+            }
+
+            variantDatabase.importVariants();
+            variantDatabase.writeNewVariantsToVCF();
+
+        } else {
+            variantDatabase.importAnnotations();
+        }
 
         variantDatabase.shutdownDatabase();
-
         variantVcfFileReader.close();
 
     }
