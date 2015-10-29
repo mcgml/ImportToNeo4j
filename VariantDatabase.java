@@ -342,32 +342,32 @@ public class VariantDatabase {
     private void addVepAnnotations(Node variantNode, VariantContext variantContext) throws InvalidPropertiesFormatException {
 
         HashMap<String, Object> properties = new HashMap<>();
-        HashSet<VEPAnnotationv82> vepAnnotations = new HashSet<>();
+        HashSet<VEPAnnotationv79> vepAnnotations = new HashSet<>();
         Node symbolNode, featureNode, annotationNode;
 
         //split annotations and make unique
         try {
 
             //one annotation
-            VEPAnnotationv82 vepAnnotationv82 = new VEPAnnotationv82((String) variantContext.getAttribute("CSQ"));
-            vepAnnotationv82.parseAnnotation();
+            VEPAnnotationv79 vepAnnotationv79 = new VEPAnnotationv79((String) variantContext.getAttribute("CSQ"));
+            vepAnnotationv79.parseAnnotation();
 
-            vepAnnotations.add(vepAnnotationv82);
+            vepAnnotations.add(vepAnnotationv79);
 
         } catch (ClassCastException e) {
 
             //multiple annotations
             for (String annotation : (ArrayList<String>) variantContext.getAttribute("CSQ")) {
 
-                VEPAnnotationv82 vepAnnotationv82 = new VEPAnnotationv82(annotation);
-                vepAnnotationv82.parseAnnotation();
+                VEPAnnotationv79 vepAnnotationv79 = new VEPAnnotationv79(annotation);
+                vepAnnotationv79.parseAnnotation();
 
-                vepAnnotations.add(vepAnnotationv82);
+                vepAnnotations.add(vepAnnotationv79);
             }
         }
 
         //loop over annotations
-        for (VEPAnnotationv82 annotation : vepAnnotations) {
+        for (VEPAnnotationv79 annotation : vepAnnotations) {
 
             symbolNode = null;
             featureNode = null;
