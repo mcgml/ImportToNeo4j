@@ -72,7 +72,7 @@ public class VariantDatabase {
         log.log(Level.INFO, "Adding users ...");
         userNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getUserLabel(), "UserId", "ml");
     }
-    public void addGenePanels() throws InvalidPropertiesFormatException {
+    public void addVirtualPanels() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding virtual panels ...");
 
         HashMap<String, Object> properties = new HashMap<>();
@@ -326,7 +326,7 @@ public class VariantDatabase {
             Node variantNode = Neo4j.getNodes(graphDb, Neo4j.getVariantLabel(), "VariantId", variantId).get(0);
 
             //add dbSNP Id
-            if (variantContext.getID() != null && !variantContext.getID().equals("")){
+            if (variantContext.getID() != null && !variantContext.getID().equals("") && !variantContext.getID().equals(".")){
 
                 properties.put("dbSNPId", variantContext.getID());
                 Neo4j.addNodeProperties(graphDb, variantNode, properties);
@@ -393,13 +393,13 @@ public class VariantDatabase {
 
                 if (annotation.getFeature() != null) properties.put("FeatureId", annotation.getFeature());
                 if (annotation.getFeatureType() != null) properties.put("FeatureType", annotation.getFeatureType());
+                if (annotation.getCcds() != null) properties.put("CCDSId", annotation.getCcds());
                 if (annotation.getStrand() == 1) {
                     properties.put("Strand", true);
                 } else if (annotation.getStrand() == -1) {
                     properties.put("Strand", false);
                 }
-                if (annotation.getExon() != null)
-                    properties.put("TotalExons", Short.parseShort(annotation.getExon().split("/")[1]));
+                if (annotation.getExon() != null) properties.put("TotalExons", Short.parseShort(annotation.getExon().split("/")[1]));
 
                 Neo4j.addNodeProperties(graphDb, featureNode, properties);
                 properties.clear();
@@ -418,7 +418,6 @@ public class VariantDatabase {
                 properties.put("Intron", Short.parseShort(annotation.getIntron().split("/")[0]));
             if (annotation.getSift() != null) properties.put("Sift", annotation.getSift());
             if (annotation.getPolyPhen() != null) properties.put("Polyphen", annotation.getPolyPhen());
-            if (annotation.getImpact() != null) properties.put("Impact", annotation.getImpact());
             if (annotation.getCodons() != null) properties.put("Codons", annotation.getCodons());
 
             annotationNode = Neo4j.addNode(graphDb, Neo4j.getAnnotationLabel(), properties);

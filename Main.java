@@ -65,7 +65,7 @@ public class Main {
 
             if (newDatabase) variantDatabase.createIndexes();
             if (newDatabase) variantDatabase.addUsers();
-            if (newDatabase) variantDatabase.addGenePanels();
+            if (newDatabase) variantDatabase.addVirtualPanels();
 
             variantDatabase.populateRunMetaData();
 
