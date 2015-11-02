@@ -321,8 +321,7 @@ public class VariantDatabase {
                     variantContext.getStart() +
                     variantContext.getAlleles().get(0).getBaseString() + ">" +
                     variantContext.getAlleles().get(1).getBaseString();
-
-            log.log(Level.INFO, "Adding annotation for: " + variantId);
+            
             Node variantNode = Neo4j.getNodes(graphDb, Neo4j.getVariantLabel(), "VariantId", variantId).get(0);
 
             //add dbSNP Id
@@ -419,6 +418,32 @@ public class VariantDatabase {
             if (annotation.getSift() != null) properties.put("Sift", annotation.getSift());
             if (annotation.getPolyPhen() != null) properties.put("Polyphen", annotation.getPolyPhen());
             if (annotation.getCodons() != null) properties.put("Codons", annotation.getCodons());
+
+            //add protein domains Pfam_domain
+            if (annotation.getDomains().containsKey("Pfam_domain")){
+                properties.put("Pfam_domain", annotation.getDomains().get("Pfam_domain").toArray(new String[annotation.getDomains().get("Pfam_domain").size()]));
+            }
+
+            //add protein domains hmmpanther
+            if (annotation.getDomains().containsKey("hmmpanther")){
+                properties.put("hmmpanther", annotation.getDomains().get("hmmpanther").toArray(new String[annotation.getDomains().get("hmmpanther").size()]));
+            }
+
+            //add protein domains PROSITE_profiles && PROSITE_patterns
+            if (annotation.getDomains().containsKey("PROSITE_profiles") || annotation.getDomains().containsKey("PROSITE_patterns")){
+
+                //combine Prosite numbers
+                HashSet<String> temp = new HashSet<>();
+                if (annotation.getDomains().containsKey("PROSITE_profiles")) temp.addAll(annotation.getDomains().get("PROSITE_profiles"));
+                if (annotation.getDomains().containsKey("PROSITE_patterns")) temp.addAll(annotation.getDomains().get("PROSITE_patterns"));
+
+                properties.put("prosite", temp.toArray(new String[temp.size()]));
+            }
+
+            //add protein domains Superfamily_domains
+            if (annotation.getDomains().containsKey("Superfamily_domains")){
+                properties.put("Superfamily_domains", annotation.getDomains().get("Superfamily_domains").toArray(new String[annotation.getDomains().get("Superfamily_domains").size()]));
+            }
 
             annotationNode = Neo4j.addNode(graphDb, Neo4j.getAnnotationLabel(), properties);
             properties.clear();
