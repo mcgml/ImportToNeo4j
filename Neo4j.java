@@ -23,6 +23,7 @@ public class Neo4j{
     private static Label runInfoLabel = DynamicLabel.label("RunInfo");
     private static Label virtualPanelLabel = DynamicLabel.label("VirtualPanel");
     private static Label userLabel = DynamicLabel.label("User");
+    private static Label featurePreferenceLabel = DynamicLabel.label("FeaturePreference");
 
     //relationships
     private static RelationshipType hasHetVariantRelationship = DynamicRelationshipType.withName("HAS_HET_VARIANT");
@@ -36,6 +37,9 @@ public class Neo4j{
     private static RelationshipType hasProteinCodingBiotypeRelationship = DynamicRelationshipType.withName("HAS_PROTEIN_CODING_BIOTYPE");
     private static RelationshipType hasAssignedPathogenicityRelationship = DynamicRelationshipType.withName("HAS_ASSIGNED_PATHOGENICITY");
     private static RelationshipType hasUserCommentRelationship = DynamicRelationshipType.withName("HAS_USER_COMMENT");
+    private static RelationshipType hasFeaturePreferenceRelationship = DynamicRelationshipType.withName("HAS_FEATURE_PREFERENCE");
+    private static RelationshipType addedByRelationship = DynamicRelationshipType.withName("ADDED_BY");
+    private static RelationshipType authorisedByRelationship = DynamicRelationshipType.withName("AUTHORISED_BY");
 
     //population frequencies
     public enum Population {
@@ -456,5 +460,16 @@ public class Neo4j{
     public static RelationshipType getHasDesignedByRelationship() {
         return hasDesignedByRelationship;
     }
-
+    public static Label getFeaturePreferenceLabel() {
+        return featurePreferenceLabel;
+    }
+    public static RelationshipType getHasFeaturePreferenceRelationship() {
+        return hasFeaturePreferenceRelationship;
+    }
+    public static RelationshipType getAddedByRelationship() {
+        return addedByRelationship;
+    }
+    public static RelationshipType getAuthorisedByRelationship() {
+        return authorisedByRelationship;
+    }
 }

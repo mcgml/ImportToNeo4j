@@ -70,7 +70,11 @@ public class VariantDatabase {
     }
     public void addUsers() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding users ...");
+
+        HashMa
+
         userNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getUserLabel(), "UserId", "ml");
+        Neo4j.addNodeProperties(graphDb, userNode, properties);
     }
     public void addVirtualPanels() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding virtual panels ...");
