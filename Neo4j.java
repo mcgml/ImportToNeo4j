@@ -39,7 +39,9 @@ public class Neo4j{
     private static RelationshipType hasUserCommentRelationship = DynamicRelationshipType.withName("HAS_USER_COMMENT");
     private static RelationshipType hasFeaturePreferenceRelationship = DynamicRelationshipType.withName("HAS_FEATURE_PREFERENCE");
     private static RelationshipType addedByRelationship = DynamicRelationshipType.withName("ADDED_BY");
-    private static RelationshipType authorisedByRelationship = DynamicRelationshipType.withName("AUTHORISED_BY");
+    private static RelationshipType removedByRelationship = DynamicRelationshipType.withName("REMOVED_BY");
+    private static RelationshipType addAuthorisedByRelationship = DynamicRelationshipType.withName("ADD_AUTHORISED_BY");
+    private static RelationshipType removedAuthorisedByRelationship = DynamicRelationshipType.withName("REMOVED_AUTHORISED_BY");
 
     //population frequencies
     public enum Population {
@@ -469,7 +471,13 @@ public class Neo4j{
     public static RelationshipType getAddedByRelationship() {
         return addedByRelationship;
     }
-    public static RelationshipType getAuthorisedByRelationship() {
-        return authorisedByRelationship;
+    public static RelationshipType getRemovedByRelationship() {
+        return removedByRelationship;
+    }
+    public static RelationshipType getAddAuthorisedByRelationship() {
+        return addAuthorisedByRelationship;
+    }
+    public static RelationshipType getRemovedAuthorisedByRelationship() {
+        return removedAuthorisedByRelationship;
     }
 }
