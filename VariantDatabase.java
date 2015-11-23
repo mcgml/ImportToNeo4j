@@ -18,12 +18,14 @@ import java.util.logging.Logger;
 //TODO retrieve pubmed abstracts (web ui)
 //TODO check alamut for extra functionality
 //todo add ddd afs
+//todo update to VEP v82
+//todo add GERP, PhastCons, PyhloP
 //todo add clinvar
 
 public class VariantDatabase {
     private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());
 
-    private int pipelineVersion, minimumAlellesForAFCalculation = 120;
+    private int pipelineVersion;
     private String worklistId, runId, supplierPanelName, pipelineName;
     private File dbPath;
     private GraphDatabaseService graphDb;
@@ -71,10 +73,16 @@ public class VariantDatabase {
     public void addUsers() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding users ...");
 
-        HashMa
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put("ContactNumber", "02920742361");
+        properties.put("FullName", "Matthew Lyon");
+        properties.put("ContactNumber", "matt.lyon@wales.nhs.uk");
+        properties.put("JobTitle", "Bioinformatician");
+        properties.put("AccountType", "Administrator");
 
         userNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getUserLabel(), "UserId", "ml");
         Neo4j.addNodeProperties(graphDb, userNode, properties);
+
     }
     public void addVirtualPanels() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding virtual panels ...");
@@ -476,7 +484,11 @@ public class VariantDatabase {
     }
     private void addPopulationFrequencies(Node variantNode, VariantContext variantContext){
 
+        int minimumAlellesForAFCalculation = 120;
         HashMap<String, Object> properties = new HashMap<>();
+
+        //todo update annotation pipeline for consistent naming
+        //todo loop over enum
 
         if (variantContext.getAttribute("1kgp3.EAS_AF") != null && !variantContext.getAttribute("1kgp3.EAS_AF").equals(".")) {
             properties.put("onekGPhase3_EAS_AF", Float.parseFloat((String) variantContext.getAttribute("1kgp3.EAS_AF")));

@@ -44,12 +44,7 @@ public class Neo4j{
     private static RelationshipType removedAuthorisedByRelationship = DynamicRelationshipType.withName("REMOVED_AUTHORISED_BY");
 
     //population frequencies
-    public enum Population {
-        onekGPhase3_EAS_AF,
-        onekGPhase3_EUR_AF,
-        onekGPhase3_AFR_AF,
-        onekGPhase3_AMR_AF,
-        onekGPhase3_SAS_AF,
+    public enum exACPopulation {
         ExAC_AFR_AF,
         ExAC_AMR_AF,
         ExAC_EAS_AF,
@@ -57,6 +52,14 @@ public class Neo4j{
         ExAC_NFE_AF,
         ExAC_OTH_AF,
         ExAC_SAS_AF
+    }
+
+    public enum onekGPopulation {
+        onekGPhase3_EAS_AF,
+        onekGPhase3_EUR_AF,
+        onekGPhase3_AFR_AF,
+        onekGPhase3_AMR_AF,
+        onekGPhase3_SAS_AF,
     }
 
     public static void shutdownDatabase(final GraphDatabaseService graphDb){
