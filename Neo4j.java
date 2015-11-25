@@ -42,7 +42,7 @@ public class Neo4j{
     private static RelationshipType addedByRelationship = DynamicRelationshipType.withName("ADDED_BY");
     private static RelationshipType removedByRelationship = DynamicRelationshipType.withName("REMOVED_BY");
     private static RelationshipType addAuthorisedByRelationship = DynamicRelationshipType.withName("ADD_AUTHORISED_BY");
-    private static RelationshipType removedAuthorisedByRelationship = DynamicRelationshipType.withName("REMOVED_AUTHORISED_BY");
+    private static RelationshipType removeAuthorisedByRelationship = DynamicRelationshipType.withName("REMOVE_AUTHORISED_BY");
 
     //population frequencies
     public enum exACPopulation {
@@ -481,8 +481,8 @@ public class Neo4j{
     public static RelationshipType getAddAuthorisedByRelationship() {
         return addAuthorisedByRelationship;
     }
-    public static RelationshipType getRemovedAuthorisedByRelationship() {
-        return removedAuthorisedByRelationship;
+    public static RelationshipType getRemoveAuthorisedByRelationship() {
+        return removeAuthorisedByRelationship;
     }
     public static Label getPathogenicityLabel() {
         return pathogenicityLabel;
