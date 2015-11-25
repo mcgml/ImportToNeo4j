@@ -24,6 +24,7 @@ public class Neo4j{
     private static Label virtualPanelLabel = DynamicLabel.label("VirtualPanel");
     private static Label userLabel = DynamicLabel.label("User");
     private static Label featurePreferenceLabel = DynamicLabel.label("FeaturePreference");
+    private static Label pathogenicityLabel = DynamicLabel.label("Pathogenicity");
 
     //relationships
     private static RelationshipType hasHetVariantRelationship = DynamicRelationshipType.withName("HAS_HET_VARIANT");
@@ -35,9 +36,9 @@ public class Neo4j{
     private static RelationshipType hasDesignedByRelationship = DynamicRelationshipType.withName("DESIGNED_BY");
     private static RelationshipType hasContainsSymbolRelationship = DynamicRelationshipType.withName("CONTAINS_SYMBOL");
     private static RelationshipType hasProteinCodingBiotypeRelationship = DynamicRelationshipType.withName("HAS_PROTEIN_CODING_BIOTYPE");
-    private static RelationshipType hasAssignedPathogenicityRelationship = DynamicRelationshipType.withName("HAS_ASSIGNED_PATHOGENICITY");
     private static RelationshipType hasUserCommentRelationship = DynamicRelationshipType.withName("HAS_USER_COMMENT");
     private static RelationshipType hasFeaturePreferenceRelationship = DynamicRelationshipType.withName("HAS_FEATURE_PREFERENCE");
+    private static RelationshipType hasPathogenicityRelationship = DynamicRelationshipType.withName("HAS_PATHOGENICITY");
     private static RelationshipType addedByRelationship = DynamicRelationshipType.withName("ADDED_BY");
     private static RelationshipType removedByRelationship = DynamicRelationshipType.withName("REMOVED_BY");
     private static RelationshipType addAuthorisedByRelationship = DynamicRelationshipType.withName("ADD_AUTHORISED_BY");
@@ -450,8 +451,8 @@ public class Neo4j{
     public static RelationshipType getHasProteinCodingBiotypeRel() {
         return hasProteinCodingBiotypeRelationship;
     }
-    public static RelationshipType getHasAssignedPathogenicityRelationship() {
-        return hasAssignedPathogenicityRelationship;
+    public static RelationshipType getHasPathogenicityRelationship() {
+        return hasPathogenicityRelationship;
     }
     public static RelationshipType getHasUserCommentRelationship() {
         return hasUserCommentRelationship;
@@ -482,5 +483,8 @@ public class Neo4j{
     }
     public static RelationshipType getRemovedAuthorisedByRelationship() {
         return removedAuthorisedByRelationship;
+    }
+    public static Label getPathogenicityLabel() {
+        return pathogenicityLabel;
     }
 }

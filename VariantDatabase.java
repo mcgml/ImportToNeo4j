@@ -15,13 +15,6 @@ import java.util.logging.Logger;
  * Created by ml on 23/06/15.
  */
 
-//TODO retrieve pubmed abstracts (web ui)
-//TODO check alamut for extra functionality
-//todo add ddd afs
-//todo update to VEP v82
-//todo add GERP, PhastCons, PyhloP
-//todo add clinvar
-
 public class VariantDatabase {
     private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());
 
@@ -76,7 +69,7 @@ public class VariantDatabase {
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("ContactNumber", "02920742361");
         properties.put("FullName", "Matthew Lyon");
-        properties.put("ContactNumber", "matt.lyon@wales.nhs.uk");
+        properties.put("EmailAddress", "matt.lyon@wales.nhs.uk");
         properties.put("JobTitle", "Bioinformatician");
         properties.put("AccountType", "Administrator");
 
@@ -347,38 +340,39 @@ public class VariantDatabase {
 
             addVepAnnotations(variantNode, variantContext);
             addPopulationFrequencies(variantNode, variantContext);
+            addConservationScores(variantNode, variantContext);
 
         }
     }
     private void addVepAnnotations(Node variantNode, VariantContext variantContext) throws InvalidPropertiesFormatException {
 
         HashMap<String, Object> properties = new HashMap<>();
-        HashSet<VEPAnnotationv79> vepAnnotations = new HashSet<>();
+        HashSet<VEPAnnotationv82> vepAnnotations = new HashSet<>();
         Node symbolNode, featureNode, annotationNode;
 
         //split annotations and make unique
         try {
 
             //one annotation
-            VEPAnnotationv79 vepAnnotationv79 = new VEPAnnotationv79((String) variantContext.getAttribute("CSQ"));
-            vepAnnotationv79.parseAnnotation();
+            VEPAnnotationv82 vepAnnotationv82 = new VEPAnnotationv82((String) variantContext.getAttribute("CSQ"));
+            vepAnnotationv82.parseAnnotation();
 
-            vepAnnotations.add(vepAnnotationv79);
+            vepAnnotations.add(vepAnnotationv82);
 
         } catch (ClassCastException e) {
 
             //multiple annotations
             for (String annotation : (ArrayList<String>) variantContext.getAttribute("CSQ")) {
 
-                VEPAnnotationv79 vepAnnotationv79 = new VEPAnnotationv79(annotation);
-                vepAnnotationv79.parseAnnotation();
+                VEPAnnotationv82 vepAnnotationv82 = new VEPAnnotationv82(annotation);
+                vepAnnotationv82.parseAnnotation();
 
-                vepAnnotations.add(vepAnnotationv79);
+                vepAnnotations.add(vepAnnotationv82);
             }
         }
 
         //loop over annotations
-        for (VEPAnnotationv79 annotation : vepAnnotations) {
+        for (VEPAnnotationv82 annotation : vepAnnotations) {
 
             symbolNode = null;
             featureNode = null;
@@ -525,6 +519,22 @@ public class VariantDatabase {
         }
         if (variantContext.getAttribute("ExAC.AC_SAS") != null && !variantContext.getAttribute("ExAC.AC_SAS").equals(".") && variantContext.getAttribute("ExAC.AN_SAS") != null && !variantContext.getAttribute("ExAC.AN_SAS").equals(".") && Integer.parseInt((String) variantContext.getAttribute("ExAC.AN_SAS")) > minimumAlellesForAFCalculation) {
             properties.put("ExAC_SAS_AF", Float.parseFloat((String) variantContext.getAttribute("ExAC.AC_SAS")) / Float.parseFloat((String) variantContext.getAttribute("ExAC.AN_SAS")));
+        }
+
+        Neo4j.addNodeProperties(graphDb, variantNode, properties);
+
+    }
+    private void addConservationScores(Node variantNode, VariantContext variantContext){
+        HashMap<String, Object> properties = new HashMap<>();
+
+        if (variantContext.getAttribute("GERP") != null && !variantContext.getAttribute("GERP").equals(".")) {
+            properties.put("GERP", Float.parseFloat((String) variantContext.getAttribute("GERP")));
+        }
+        if (variantContext.getAttribute("phastCons") != null && !variantContext.getAttribute("phastCons").equals(".")) {
+            properties.put("phastCons", Float.parseFloat((String) variantContext.getAttribute("phastCons")));
+        }
+        if (variantContext.getAttribute("phyloP") != null && !variantContext.getAttribute("phyloP").equals(".")) {
+            properties.put("phyloP", Float.parseFloat((String) variantContext.getAttribute("phyloP")));
         }
 
         Neo4j.addNodeProperties(graphDb, variantNode, properties);
