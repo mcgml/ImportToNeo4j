@@ -67,8 +67,6 @@ public class Main {
             if (newDatabase) variantDatabase.addUsers();
             if (newDatabase) variantDatabase.addVirtualPanels();
 
-            variantDatabase.populateRunMetaData();
-
             try {
                 variantDatabase.addSampleAndRunInfoNodes();
             } catch (ConstraintViolationException e){

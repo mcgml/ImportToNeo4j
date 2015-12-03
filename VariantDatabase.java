@@ -3,6 +3,7 @@ package nhs.genetics.cardiff;
 import htsjdk.variant.variantcontext.Genotype;
 import htsjdk.variant.variantcontext.VariantContext;
 import htsjdk.variant.vcf.VCFFileReader;
+import htsjdk.variant.vcf.VCFHeaderLine;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 
@@ -18,8 +19,6 @@ import java.util.logging.Logger;
 public class VariantDatabase {
     private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());
 
-    private int pipelineVersion;
-    private String worklistId, runId, supplierPanelName, pipelineName;
     private File dbPath;
     private GraphDatabaseService graphDb;
     private VCFFileReader vcfFileReader;
@@ -48,7 +47,7 @@ public class VariantDatabase {
         //todo check these
         Neo4j.createConstraint(graphDb, Neo4j.getSampleLabel(), "SampleId");
         Neo4j.createIndex(graphDb, Neo4j.getRunInfoLabel(), "WorklistId");
-        Neo4j.createIndex(graphDb, Neo4j.getRunInfoLabel(), "RunId");
+        Neo4j.createIndex(graphDb, Neo4j.getRunInfoLabel(), "SeqId");
         Neo4j.createConstraint(graphDb, Neo4j.getRunInfoLabel(), "AnalysisId");
         Neo4j.createConstraint(graphDb, Neo4j.getVariantLabel(), "VariantId");
         Neo4j.createConstraint(graphDb, Neo4j.getMtChromosomeLabel(), "VariantId");
@@ -116,48 +115,48 @@ public class VariantDatabase {
     }
 
     //import genotype VCF
-    public void populateRunMetaData(){
-        log.log(Level.INFO, "Extracting metadata ...");
-
-        worklistId = "K15-0000";
-        runId = "AFWJ3";
-        supplierPanelName = "Illumina TruSight Cancer";
-        pipelineName = "IlluminaTruSightCancer";
-        pipelineVersion = 4;
-
-    }
     public void addSampleAndRunInfoNodes() throws InvalidPropertiesFormatException {
         log.log(Level.INFO, "Adding sample and run info nodes ...");
 
         HashMap<String, Object> properties = new HashMap<>();
-        ArrayList<String> sampleIds = vcfFileReader.getFileHeader().getSampleNamesInOrder();
+        HashMap<String, String> keyValuePairs = new HashMap<>();
+        Set<VCFHeaderLine> metaLines = vcfFileReader.getFileHeader().getMetaDataInInputOrder();
 
-        for (short n = 0; n < sampleIds.size(); ++n){
+        for (VCFHeaderLine line : metaLines){
+            if (line.getKey().equals("SAMPLE")){
 
-            //add sample
-            Node sampleNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getSampleLabel(), "SampleId", sampleIds.get(n));
+                //split out key value pairs
+                for (String keyValuePair : line.getValue().split(",")){
+                    String[] keyValue = keyValuePair.split("=");
+                    keyValuePairs.put(keyValue[0].replace("<", ""), keyValue[1].replace(">", ""));
+                }
 
-            properties.put("SampleType", "Peripheral Blood"); //todo
-            Neo4j.addNodeProperties(graphDb, sampleNode, properties);
-            properties.clear();
+                //add sample
+                Node sampleNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getSampleLabel(), "SampleId", keyValuePairs.get("ID"));
+                properties.put("Tissue", keyValuePairs.get("Tissue"));
+                Neo4j.addNodeProperties(graphDb, sampleNode, properties);
+                properties.clear();
 
-            //add run info
-            properties.put("WorklistId", worklistId);
-            properties.put("RunId", runId);
-            properties.put("SampleNo", n);
-            properties.put("AnalysisId", worklistId + "_" + n + "_" + runId);
-            properties.put("SupplierPanelName", supplierPanelName);
-            properties.put("PipelineName", pipelineName);
-            properties.put("PipelineVersion", pipelineVersion);
-            properties.put("RemoteBamFilePath", "bam.bam");//todo
-            properties.put("RemoteVcfFilePath", "vcf.vcf");//todo
+                //add run info
+                properties.put("WorklistId", keyValuePairs.get("WorklistId"));
+                properties.put("SeqId", keyValuePairs.get("SeqId"));
+                properties.put("AnalysisId", keyValuePairs.get("WorklistId") + "_" + keyValuePairs.get("ID") + "_" + keyValuePairs.get("SeqId"));
+                properties.put("Assay", keyValuePairs.get("Assay"));
+                properties.put("PipelineName", keyValuePairs.get("PipelineName"));
+                properties.put("PipelineVersion", Integer.parseInt(keyValuePairs.get("PipelineVersion")));
+                properties.put("RemoteBamFilePath", keyValuePairs.get("RemoteBamFilePath"));
+                properties.put("RemoteVcfFilePath", keyValuePairs.get("RemoteVcfFilePath"));
 
-            Node runInfoNode = Neo4j.addNode(graphDb, Neo4j.getRunInfoLabel(), properties);
-            properties.clear();
+                Node runInfoNode = Neo4j.addNode(graphDb, Neo4j.getRunInfoLabel(), properties);
+                properties.clear();
 
-            //link sample and runInfo
-            Neo4j.createRelationship(graphDb, sampleNode, runInfoNode, Neo4j.getHasAnalysisRelationship(), properties);
-            runInfoNodes.put(sampleIds.get(n), runInfoNode);
+                //link sample and runInfo
+                Neo4j.createRelationship(graphDb, sampleNode, runInfoNode, Neo4j.getHasAnalysisRelationship(), properties);
+                runInfoNodes.put(keyValuePairs.get("ID"), runInfoNode);
+
+                keyValuePairs.clear();
+
+            }
         }
 
     }
@@ -481,23 +480,22 @@ public class VariantDatabase {
         int minimumAlellesForAFCalculation = 120;
         HashMap<String, Object> properties = new HashMap<>();
 
-        //todo update annotation pipeline for consistent naming
         //todo loop over enum
 
-        if (variantContext.getAttribute("1kgp3.EAS_AF") != null && !variantContext.getAttribute("1kgp3.EAS_AF").equals(".")) {
-            properties.put("onekGPhase3_EAS_AF", Float.parseFloat((String) variantContext.getAttribute("1kgp3.EAS_AF")));
+        if (variantContext.getAttribute("onekGPhase3.EAS_AF") != null && !variantContext.getAttribute("onekGPhase3.EAS_AF").equals(".")) {
+            properties.put("onekGPhase3_EAS_AF", Float.parseFloat((String) variantContext.getAttribute("onekGPhase3.EAS_AF")));
         }
-        if (variantContext.getAttribute("1kgp3.EUR_AF") != null && !variantContext.getAttribute("1kgp3.EUR_AF").equals(".")) {
-            properties.put("onekGPhase3_EUR_AF", Float.parseFloat((String) variantContext.getAttribute("1kgp3.EUR_AF")));
+        if (variantContext.getAttribute("onekGPhase3.EUR_AF") != null && !variantContext.getAttribute("onekGPhase3.EUR_AF").equals(".")) {
+            properties.put("onekGPhase3_EUR_AF", Float.parseFloat((String) variantContext.getAttribute("onekGPhase3.EUR_AF")));
         }
-        if (variantContext.getAttribute("1kgp3.AFR_AF") != null && !variantContext.getAttribute("1kgp3.AFR_AF").equals(".")) {
-            properties.put("onekGPhase3_AFR_AF", Float.parseFloat((String) variantContext.getAttribute("1kgp3.AFR_AF")));
+        if (variantContext.getAttribute("onekGPhase3.AFR_AF") != null && !variantContext.getAttribute("onekGPhase3.AFR_AF").equals(".")) {
+            properties.put("onekGPhase3_AFR_AF", Float.parseFloat((String) variantContext.getAttribute("onekGPhase3.AFR_AF")));
         }
-        if (variantContext.getAttribute("1kgp3.AMR_AF") != null && !variantContext.getAttribute("1kgp3.AMR_AF").equals(".")) {
-            properties.put("onekGPhase3_AMR_AF", Float.parseFloat((String) variantContext.getAttribute("1kgp3.AMR_AF")));
+        if (variantContext.getAttribute("onekGPhase3.AMR_AF") != null && !variantContext.getAttribute("onekGPhase3.AMR_AF").equals(".")) {
+            properties.put("onekGPhase3_AMR_AF", Float.parseFloat((String) variantContext.getAttribute("onekGPhase3.AMR_AF")));
         }
-        if (variantContext.getAttribute("1kgp3.SAS_AF") != null && !variantContext.getAttribute("1kgp3.SAS_AF").equals(".")) {
-            properties.put("onekGPhase3_SAS_AF", Float.parseFloat((String) variantContext.getAttribute("1kgp3.SAS_AF")));
+        if (variantContext.getAttribute("onekGPhase3.SAS_AF") != null && !variantContext.getAttribute("onekGPhase3.SAS_AF").equals(".")) {
+            properties.put("onekGPhase3_SAS_AF", Float.parseFloat((String) variantContext.getAttribute("onekGPhase3.SAS_AF")));
         }
         if (variantContext.getAttribute("ExAC.AC_AFR") != null && !variantContext.getAttribute("ExAC.AC_AFR").equals(".") && variantContext.getAttribute("ExAC.AN_AFR") != null && !variantContext.getAttribute("ExAC.AN_AFR").equals(".") && Integer.parseInt((String) variantContext.getAttribute("ExAC.AN_AFR")) > minimumAlellesForAFCalculation) {
             properties.put("ExAC_AFR_AF", Float.parseFloat((String) variantContext.getAttribute("ExAC.AC_AFR")) / Float.parseFloat((String) variantContext.getAttribute("ExAC.AN_AFR")));
