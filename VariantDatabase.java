@@ -357,7 +357,7 @@ public class VariantDatabase {
             VEPAnnotationv82 vepAnnotationv82 = new VEPAnnotationv82((String) variantContext.getAttribute("CSQ"));
             vepAnnotationv82.parseAnnotation();
 
-            vepAnnotations.add(vepAnnotationv82);
+            if (!filterVepAnnotation(vepAnnotationv82)) vepAnnotations.add(vepAnnotationv82);
 
         } catch (ClassCastException e) {
 
@@ -367,7 +367,7 @@ public class VariantDatabase {
                 VEPAnnotationv82 vepAnnotationv82 = new VEPAnnotationv82(annotation);
                 vepAnnotationv82.parseAnnotation();
 
-                vepAnnotations.add(vepAnnotationv82);
+                if (!filterVepAnnotation(vepAnnotationv82)) vepAnnotations.add(vepAnnotationv82);
             }
         }
 
@@ -539,6 +539,18 @@ public class VariantDatabase {
 
         Neo4j.addNodeProperties(graphDb, variantNode, properties);
 
+    }
+    private static boolean filterVepAnnotation(VEPAnnotationv82 vepAnnotationv82){
+
+        //check biotype
+        if (!vepAnnotationv82.getBiotype().equals("PROTEIN_CODING")) return true;
+
+        /*?remove upstream/downstream only
+        for (String consequence : vepAnnotationv82.getConsequences()){
+
+        }*/
+
+        return false;
     }
 
     public void shutdownDatabase(){
