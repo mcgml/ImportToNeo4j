@@ -357,7 +357,9 @@ public class VariantDatabase {
             VEPAnnotationv82 vepAnnotationv82 = new VEPAnnotationv82((String) variantContext.getAttribute("CSQ"));
             vepAnnotationv82.parseAnnotation();
 
-            if (!filterVepAnnotation(vepAnnotationv82)) vepAnnotations.add(vepAnnotationv82);
+            if (!filterVepAnnotation(vepAnnotationv82)){
+                vepAnnotations.add(vepAnnotationv82);
+            }
 
         } catch (ClassCastException e) {
 
@@ -542,7 +544,7 @@ public class VariantDatabase {
     private static boolean filterVepAnnotation(VEPAnnotationv82 vepAnnotationv82){
 
         //check biotype
-        if (!vepAnnotationv82.getBiotype().equals("PROTEIN_CODING")) return true;
+        if (vepAnnotationv82.getBiotype() == null || !vepAnnotationv82.getBiotype().equals("PROTEIN_CODING")) return true;
 
         /*?remove upstream/downstream only
         for (String consequence : vepAnnotationv82.getConsequences()){
