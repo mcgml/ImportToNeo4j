@@ -58,7 +58,7 @@ public class VariantDatabase {
         Neo4j.createConstraint(graphDb, Neo4j.getFeatureLabel(), "FeatureId");
         Neo4j.createConstraint(graphDb, Neo4j.getCanonicalLabel(), "FeatureId");
         Neo4j.createConstraint(graphDb, Neo4j.getSymbolLabel(), "SymbolId");
-        Neo4j.createConstraint(graphDb, Neo4j.getVirtualPanelLabel(), "VirtualPanelId");
+        Neo4j.createConstraint(graphDb, Neo4j.getVirtualPanelLabel(), "VirtualPanelName");
         Neo4j.createConstraint(graphDb, Neo4j.getUserLabel(), "UserId");
 
     }
@@ -228,6 +228,7 @@ public class VariantDatabase {
 
     }
     public void writeNewVariantsToVCF(){
+        log.log(Level.INFO, "Writing imported variants to VCF.");
 
         try (PrintWriter printWriter = new PrintWriter(new File("imported.vcf"))){
 
