@@ -422,10 +422,8 @@ public class VariantDatabase {
             //add annotation
             if (annotation.getHgvsCoding() != null) properties.put("HGVSc", annotation.getHgvsCoding());
             if (annotation.getHgvsProtein() != null) properties.put("HGVSp", annotation.getHgvsProtein());
-            if (annotation.getExon() != null)
-                properties.put("Exon", Short.parseShort(annotation.getExon().split("/")[0]));
-            if (annotation.getIntron() != null)
-                properties.put("Intron", Short.parseShort(annotation.getIntron().split("/")[0]));
+            if (annotation.getExon() != null) properties.put("Exon", annotation.getExon().split("/")[0]); //must remain as string, can be given as range i.e. 1-2
+            if (annotation.getIntron() != null) properties.put("Intron", annotation.getIntron().split("/")[0]); //must remain as string, can be given as range i.e. 1-2
             if (annotation.getSift() != null) properties.put("Sift", annotation.getSift());
             if (annotation.getPolyPhen() != null) properties.put("Polyphen", annotation.getPolyPhen());
             if (annotation.getCodons() != null) properties.put("Codons", annotation.getCodons());
