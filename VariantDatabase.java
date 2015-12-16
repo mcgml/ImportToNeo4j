@@ -386,15 +386,7 @@ public class VariantDatabase {
             //add symbol
             if (annotation.getSymbol() != null && !annotation.getSymbol().equals("")) {
                 symbolNode = Neo4j.matchOrCreateUniqueNode(graphDb, Neo4j.getSymbolLabel(), "SymbolId", annotation.getSymbol()); //add symbol
-
-                if (annotation.getGene() != null && !annotation.getGene().equals("")){
-                    properties.put("GeneId", annotation.getGene());
-                    Neo4j.addNodeProperties(graphDb, symbolNode, properties);
-                    properties.clear();
-                }
-
                 Neo4j.createRelationship(graphDb, variantNode, symbolNode, Neo4j.getHasInSymbolRelationship(), properties); //link variant and symbol
-
             }
 
             //add feature
@@ -546,6 +538,11 @@ public class VariantDatabase {
 
         //check biotype
         if (vepAnnotationv82.getBiotype() == null || !vepAnnotationv82.getBiotype().equals("protein_coding")) {
+            return true;
+        }
+
+        //check symbol source
+        if (vepAnnotationv82.getSymbolSource() == null || !vepAnnotationv82.getSymbolSource().equals("HGNC")) {
             return true;
         }
 
