@@ -463,9 +463,6 @@ public class Neo4j{
     public static RelationshipType getHasContainsSymbolRelationship() {
         return hasContainsSymbolRelationship;
     }
-    public static RelationshipType getHasDesignedByRelationship() {
-        return hasDesignedByRelationship;
-    }
     public static Label getFeaturePreferenceLabel() {
         return featurePreferenceLabel;
     }
