@@ -23,8 +23,13 @@ public class Neo4j{
     private static Label runInfoLabel = DynamicLabel.label("RunInfo");
     private static Label virtualPanelLabel = DynamicLabel.label("VirtualPanel");
     private static Label userLabel = DynamicLabel.label("User");
-    private static Label featurePreferenceLabel = DynamicLabel.label("FeaturePreference");
-    private static Label pathogenicityLabel = DynamicLabel.label("Pathogenicity");
+    private static Label preferredFeaturedLabel = DynamicLabel.label("PreferredFeatured");
+    private static Label classOneLabel = DynamicLabel.label("C1");
+    private static Label classTwoLabel = DynamicLabel.label("C2");
+    private static Label classThreeLabel = DynamicLabel.label("C3");
+    private static Label classFourLabel = DynamicLabel.label("C4");
+    private static Label classFiveLabel = DynamicLabel.label("C5");
+    private static Label variantPathogenicityLabel = DynamicLabel.label("VariantPathogenicity");
 
     //relationships
     private static RelationshipType hasHetVariantRelationship = DynamicRelationshipType.withName("HAS_HET_VARIANT");
@@ -394,10 +399,10 @@ public class Neo4j{
     public static Label getAutoChromosomeLabel() {
         return autoChromosomeLabel;
     }
-    public static Label getXChromosomeLabel() {
+    public static Label getxChromosomeLabel() {
         return xChromosomeLabel;
     }
-    public static Label getYChromosomeLabel() {
+    public static Label getyChromosomeLabel() {
         return yChromosomeLabel;
     }
     public static Label getMtChromosomeLabel() {
@@ -424,6 +429,24 @@ public class Neo4j{
     public static Label getUserLabel() {
         return userLabel;
     }
+    public static Label getPreferredFeaturedLabel() {
+        return preferredFeaturedLabel;
+    }
+    public static Label getClassOneLabel() {
+        return classOneLabel;
+    }
+    public static Label getClassTwoLabel() {
+        return classTwoLabel;
+    }
+    public static Label getClassThreeLabel() {
+        return classThreeLabel;
+    }
+    public static Label getClassFourLabel() {
+        return classFourLabel;
+    }
+    public static Label getClassFiveLabel() {
+        return classFiveLabel;
+    }
     public static RelationshipType getHasHetVariantRelationship() {
         return hasHetVariantRelationship;
     }
@@ -442,32 +465,23 @@ public class Neo4j{
     public static RelationshipType getHasAnalysisRelationship() {
         return hasAnalysisRelationship;
     }
-    public static RelationshipType getHasContainsSymbol() {
-        return hasContainsSymbolRelationship;
-    }
-    public static RelationshipType getHasDesignedBy() {
+    public static RelationshipType getHasDesignedByRelationship() {
         return hasDesignedByRelationship;
-    }
-    public static RelationshipType getHasProteinCodingBiotypeRel() {
-        return hasProteinCodingBiotypeRelationship;
-    }
-    public static RelationshipType getHasPathogenicityRelationship() {
-        return hasPathogenicityRelationship;
-    }
-    public static RelationshipType getHasUserCommentRelationship() {
-        return hasUserCommentRelationship;
-    }
-    public static RelationshipType getHasProteinCodingBiotypeRelationship() {
-        return hasProteinCodingBiotypeRelationship;
     }
     public static RelationshipType getHasContainsSymbolRelationship() {
         return hasContainsSymbolRelationship;
     }
-    public static Label getFeaturePreferenceLabel() {
-        return featurePreferenceLabel;
+    public static RelationshipType getHasProteinCodingBiotypeRelationship() {
+        return hasProteinCodingBiotypeRelationship;
+    }
+    public static RelationshipType getHasUserCommentRelationship() {
+        return hasUserCommentRelationship;
     }
     public static RelationshipType getHasFeaturePreferenceRelationship() {
         return hasFeaturePreferenceRelationship;
+    }
+    public static RelationshipType getHasPathogenicityRelationship() {
+        return hasPathogenicityRelationship;
     }
     public static RelationshipType getAddedByRelationship() {
         return addedByRelationship;
@@ -481,7 +495,7 @@ public class Neo4j{
     public static RelationshipType getRemoveAuthorisedByRelationship() {
         return removeAuthorisedByRelationship;
     }
-    public static Label getPathogenicityLabel() {
-        return pathogenicityLabel;
+    public static Label getVariantPathogenicityLabel() {
+        return variantPathogenicityLabel;
     }
 }
