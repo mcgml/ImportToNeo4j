@@ -9,65 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Neo4j{
 
-    //labels
-    private static Label sampleLabel = DynamicLabel.label("Sample");
-    private static Label variantLabel = DynamicLabel.label("Variant");
-    private static Label autoChromosomeLabel = DynamicLabel.label("Autosome");
-    private static Label xChromosomeLabel = DynamicLabel.label("X");
-    private static Label yChromosomeLabel = DynamicLabel.label("Y");
-    private static Label mtChromosomeLabel = DynamicLabel.label("MT");
-    private static Label annotationLabel = DynamicLabel.label("Annotation");
-    private static Label symbolLabel = DynamicLabel.label("Symbol");
-    private static Label canonicalLabel = DynamicLabel.label("Canonical");
-    private static Label featureLabel = DynamicLabel.label("Feature");
-    private static Label runInfoLabel = DynamicLabel.label("RunInfo");
-    private static Label virtualPanelLabel = DynamicLabel.label("VirtualPanel");
-    private static Label userLabel = DynamicLabel.label("User");
-    private static Label preferredFeaturedLabel = DynamicLabel.label("PreferredFeatured");
-    private static Label classOneLabel = DynamicLabel.label("C1");
-    private static Label classTwoLabel = DynamicLabel.label("C2");
-    private static Label classThreeLabel = DynamicLabel.label("C3");
-    private static Label classFourLabel = DynamicLabel.label("C4");
-    private static Label classFiveLabel = DynamicLabel.label("C5");
-    private static Label variantPathogenicityLabel = DynamicLabel.label("VariantPathogenicity");
-
-    //relationships
-    private static RelationshipType hasHetVariantRelationship = DynamicRelationshipType.withName("HAS_HET_VARIANT");
-    private static RelationshipType hasHomVariantRelationship = DynamicRelationshipType.withName("HAS_HOM_VARIANT");
-    private static RelationshipType hasInSymbolRelationship = DynamicRelationshipType.withName("IN_SYMBOL");
-    private static RelationshipType hasInFeatureRelationship = DynamicRelationshipType.withName("IN_FEATURE");
-    private static RelationshipType hasUnknownConsequenceRelationship = DynamicRelationshipType.withName("HAS_UNKNOWN_CONSEQUENCE");
-    private static RelationshipType hasAnalysisRelationship = DynamicRelationshipType.withName("HAS_ANALYSIS");
-    private static RelationshipType hasDesignedByRelationship = DynamicRelationshipType.withName("DESIGNED_BY");
-    private static RelationshipType hasContainsSymbolRelationship = DynamicRelationshipType.withName("CONTAINS_SYMBOL");
-    private static RelationshipType hasProteinCodingBiotypeRelationship = DynamicRelationshipType.withName("HAS_PROTEIN_CODING_BIOTYPE");
-    private static RelationshipType hasUserCommentRelationship = DynamicRelationshipType.withName("HAS_USER_COMMENT");
-    private static RelationshipType hasFeaturePreferenceRelationship = DynamicRelationshipType.withName("HAS_FEATURE_PREFERENCE");
-    private static RelationshipType hasPathogenicityRelationship = DynamicRelationshipType.withName("HAS_PATHOGENICITY");
-    private static RelationshipType addedByRelationship = DynamicRelationshipType.withName("ADDED_BY");
-    private static RelationshipType removedByRelationship = DynamicRelationshipType.withName("REMOVED_BY");
-    private static RelationshipType addAuthorisedByRelationship = DynamicRelationshipType.withName("ADD_AUTHORISED_BY");
-    private static RelationshipType removeAuthorisedByRelationship = DynamicRelationshipType.withName("REMOVE_AUTHORISED_BY");
-
-    //population frequencies
-    public enum exACPopulation {
-        ExAC_AFR_AF,
-        ExAC_AMR_AF,
-        ExAC_EAS_AF,
-        ExAC_FIN_AF,
-        ExAC_NFE_AF,
-        ExAC_OTH_AF,
-        ExAC_SAS_AF
-    }
-
-    public enum onekGPopulation {
-        onekGPhase3_EAS_AF,
-        onekGPhase3_EUR_AF,
-        onekGPhase3_AFR_AF,
-        onekGPhase3_AMR_AF,
-        onekGPhase3_SAS_AF,
-    }
-
     public static void shutdownDatabase(final GraphDatabaseService graphDb){
         graphDb.shutdown();
     }
@@ -153,8 +94,10 @@ public class Neo4j{
         {
             node = graphDb.createNode( label );
 
-            for (Map.Entry<String, Object> property : properties.entrySet()){
-                node.setProperty(property.getKey(), property.getValue());
+            if (properties != null) {
+                for (Map.Entry<String, Object> property : properties.entrySet()){
+                    node.setProperty(property.getKey(), property.getValue());
+                }
             }
 
             tx.success();
@@ -249,8 +192,10 @@ public class Neo4j{
             Relationship relationship = node1.createRelationshipTo(node2, type);
 
             //set properties
-            for (Map.Entry<String, Object> property : properties.entrySet()){
-                relationship.setProperty(property.getKey(), property.getValue());
+            if (properties != null){
+                for (Map.Entry<String, Object> property : properties.entrySet()){
+                    relationship.setProperty(property.getKey(), property.getValue());
+                }
             }
 
             tx.success();
@@ -389,113 +334,16 @@ public class Neo4j{
 
         return false;
     }
+    public static ArrayList<String> getNodeLabels(final GraphDatabaseService graphDb, Node node){
+        ArrayList<String> labels = new ArrayList<>();
 
-    public static Label getSampleLabel() {
-        return sampleLabel;
+        try ( Transaction tx = graphDb.beginTx() ) {
+            for (Label label : node.getLabels()) {
+                labels.add(label.toString());
+            }
+        }
+
+        return labels;
     }
-    public static Label getVariantLabel() {
-        return variantLabel;
-    }
-    public static Label getAutoChromosomeLabel() {
-        return autoChromosomeLabel;
-    }
-    public static Label getxChromosomeLabel() {
-        return xChromosomeLabel;
-    }
-    public static Label getyChromosomeLabel() {
-        return yChromosomeLabel;
-    }
-    public static Label getMtChromosomeLabel() {
-        return mtChromosomeLabel;
-    }
-    public static Label getAnnotationLabel() {
-        return annotationLabel;
-    }
-    public static Label getSymbolLabel() {
-        return symbolLabel;
-    }
-    public static Label getCanonicalLabel() {
-        return canonicalLabel;
-    }
-    public static Label getFeatureLabel() {
-        return featureLabel;
-    }
-    public static Label getRunInfoLabel() {
-        return runInfoLabel;
-    }
-    public static Label getVirtualPanelLabel() {
-        return virtualPanelLabel;
-    }
-    public static Label getUserLabel() {
-        return userLabel;
-    }
-    public static Label getPreferredFeaturedLabel() {
-        return preferredFeaturedLabel;
-    }
-    public static Label getClassOneLabel() {
-        return classOneLabel;
-    }
-    public static Label getClassTwoLabel() {
-        return classTwoLabel;
-    }
-    public static Label getClassThreeLabel() {
-        return classThreeLabel;
-    }
-    public static Label getClassFourLabel() {
-        return classFourLabel;
-    }
-    public static Label getClassFiveLabel() {
-        return classFiveLabel;
-    }
-    public static RelationshipType getHasHetVariantRelationship() {
-        return hasHetVariantRelationship;
-    }
-    public static RelationshipType getHasHomVariantRelationship() {
-        return hasHomVariantRelationship;
-    }
-    public static RelationshipType getHasInSymbolRelationship() {
-        return hasInSymbolRelationship;
-    }
-    public static RelationshipType getHasInFeatureRelationship() {
-        return hasInFeatureRelationship;
-    }
-    public static RelationshipType getHasUnknownConsequenceRelationship() {
-        return hasUnknownConsequenceRelationship;
-    }
-    public static RelationshipType getHasAnalysisRelationship() {
-        return hasAnalysisRelationship;
-    }
-    public static RelationshipType getHasDesignedByRelationship() {
-        return hasDesignedByRelationship;
-    }
-    public static RelationshipType getHasContainsSymbolRelationship() {
-        return hasContainsSymbolRelationship;
-    }
-    public static RelationshipType getHasProteinCodingBiotypeRelationship() {
-        return hasProteinCodingBiotypeRelationship;
-    }
-    public static RelationshipType getHasUserCommentRelationship() {
-        return hasUserCommentRelationship;
-    }
-    public static RelationshipType getHasFeaturePreferenceRelationship() {
-        return hasFeaturePreferenceRelationship;
-    }
-    public static RelationshipType getHasPathogenicityRelationship() {
-        return hasPathogenicityRelationship;
-    }
-    public static RelationshipType getAddedByRelationship() {
-        return addedByRelationship;
-    }
-    public static RelationshipType getRemovedByRelationship() {
-        return removedByRelationship;
-    }
-    public static RelationshipType getAddAuthorisedByRelationship() {
-        return addAuthorisedByRelationship;
-    }
-    public static RelationshipType getRemoveAuthorisedByRelationship() {
-        return removeAuthorisedByRelationship;
-    }
-    public static Label getVariantPathogenicityLabel() {
-        return variantPathogenicityLabel;
-    }
+
 }

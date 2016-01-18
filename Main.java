@@ -14,7 +14,7 @@ public class Main {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
-    private static final double version = 0.3;
+    private static final double version = 0.5;
     private static boolean newDatabase = false, addAnnotations = false;
 
     public static void main(String[] args) throws InvalidPropertiesFormatException {
@@ -37,7 +37,7 @@ public class Main {
         }
 
         if (newDatabase && addAnnotations){
-            System.err.println("ERROR: Cannot create new database and add annotations. Check arguments.");
+            log.log(Level.SEVERE, "Cannot create new database and add annotations simultaneously. Check arguments.");
             System.exit(1);
         }
 
@@ -54,18 +54,16 @@ public class Main {
         log.log(Level.INFO, "Importing " + args[0] + " to " + args[1]);
 
         //create VCF file parser
-        VCFFileReader variantVcfFileReader = new VCFFileReader(new File(args[0]), new File(args[0] + ".idx"));
+        VCFFileReader vcfFileReader = new VCFFileReader(new File(args[0]), new File(args[0] + ".idx"));
 
         //create database object
-        VariantDatabase variantDatabase = new VariantDatabase(variantVcfFileReader, new File(args[1]));
+        VariantDatabase variantDatabase = new VariantDatabase(vcfFileReader, new File(args[1]));
         variantDatabase.startDatabase();
 
         //add genotypes
         if (!addAnnotations){
 
             if (newDatabase) variantDatabase.createIndexes();
-            if (newDatabase) variantDatabase.addUsers();
-            if (newDatabase) variantDatabase.addVirtualPanels();
 
             try {
                 variantDatabase.addSampleAndRunInfoNodes();
@@ -82,7 +80,7 @@ public class Main {
         }
 
         variantDatabase.shutdownDatabase();
-        variantVcfFileReader.close();
+        vcfFileReader.close();
 
     }
 
