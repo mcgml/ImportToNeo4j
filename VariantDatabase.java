@@ -462,24 +462,22 @@ public class VariantDatabase {
 
     private void addPopulationFrequencies(Node variantNode, VariantContext variantContext){
 
-        //todo align with VCF file
-
         int minimumAllelesForAFCalculation = 120;
         HashMap<String, Object> properties = new HashMap<>();
 
         // 1000 genomes phase 3
         for (kGPhase3Population populationFrequency : kGPhase3Population.values()){
-            if (variantContext.getAttribute("kGPhase3." + populationFrequency.toString() + "_AF") != null && !variantContext.getAttribute(populationFrequency.toString()).equals(".")) {
-                properties.put(populationFrequency.toString(), Float.parseFloat((String) variantContext.getAttribute(populationFrequency.toString())));
+            if (variantContext.getAttribute("kGPhase3." + populationFrequency.toString() + "_AF") != null && !variantContext.getAttribute("kGPhase3." + populationFrequency.toString() + "_AF").equals(".")) {
+                properties.put("kGPhase3" + populationFrequency.toString() + "Af", Float.parseFloat((String) variantContext.getAttribute("kGPhase3." + populationFrequency.toString() + "_AF")));
             }
         }
 
         // Exome aggregation consortium
         for (exacPopulation populationFrequency : exacPopulation.values()){
-            if (variantContext.getAttribute(populationFrequency.toString()) != null && !variantContext.getAttribute(populationFrequency.toString()).equals(".")
-                    && variantContext.getAttribute(populationFrequency.toString()) != null && !variantContext.getAttribute(populationFrequency.toString()).equals(".")
-                    && Integer.parseInt((String) variantContext.getAttribute(populationFrequency.toString())) > minimumAllelesForAFCalculation) {
-                properties.put(populationFrequency.toString(), Float.parseFloat((String) variantContext.getAttribute(populationFrequency.toString())) / Float.parseFloat((String) variantContext.getAttribute(populationFrequency.toString())));
+            if (variantContext.getAttribute("exac.AC_" + populationFrequency.toString()) != null && !variantContext.getAttribute("exac.AC_" + populationFrequency.toString()).equals(".")
+                    && variantContext.getAttribute("exac.AN_" + populationFrequency.toString()) != null && !variantContext.getAttribute("exac.AN_" + populationFrequency.toString()).equals(".")
+                    && Integer.parseInt((String) variantContext.getAttribute("exac.AN_" + populationFrequency.toString())) > minimumAllelesForAFCalculation) {
+                properties.put("exac" + populationFrequency.toString() + "Af", Float.parseFloat((String) variantContext.getAttribute("exac.AC_" + populationFrequency.toString())) / Float.parseFloat((String) variantContext.getAttribute("exac.AN_" + populationFrequency.toString())));
             }
         }
 
@@ -504,19 +502,17 @@ public class VariantDatabase {
 
     }
 
-    private static boolean filterVepAnnotation(VEPAnnotationv82 vepAnnotationv83Record) {
+    private static boolean filterVepAnnotation(VEPAnnotationv82 vepAnnotationv82) {
 
-        System.out.println(vepAnnotationv83Record.getBiotype());
-
-        /*check biotype
-        if (vepAnnotationv83Record.getBiotype() == null || !vepAnnotationv83Record.getBiotype().equals("protein_coding")) {
+        //check biotype
+        if (vepAnnotationv82.getBiotype() == null || !vepAnnotationv82.getBiotype().equals("protein_coding")) {
             return true;
         }
 
         //check symbol source
-        if (vepAnnotationv83Record.getSymbolSource() == null || !vepAnnotationv83Record.getSymbolSource().equals("HGNC")) {
+        if (vepAnnotationv82.getSymbolSource() == null || !vepAnnotationv82.getSymbolSource().equals("HGNC")) {
             return true;
-        }*/
+        }
 
         return false;
     }
