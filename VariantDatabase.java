@@ -32,6 +32,8 @@ public class VariantDatabase {
     private static Label xChromLabel = Label.label("X");
     private static Label yChromLabel = Label.label("Y");
     private static Label mtChromLabel = Label.label("MT");
+    private static Label snpLabel = Label.label("Snp");
+    private static Label indelLabel = Label.label("Indel");
     private static Label annotationLabel = Label.label("Annotation");
     private static Label symbolLabel = Label.label("Symbol");
     private static Label canonicalLabel = Label.label("Canonical");
@@ -283,6 +285,9 @@ public class VariantDatabase {
                 } else if (Integer.parseInt(genomeVariant.getContig()) > 0 && Integer.parseInt(genomeVariant.getContig()) < 23) {
                     Neo4j.addNodeLabel(graphDb, variantNode, autosomeLabel);
                 }
+
+                if (genomeVariant.isSnp()) Neo4j.addNodeLabel(graphDb, variantNode, snpLabel);
+                if (genomeVariant.isIndel()) Neo4j.addNodeLabel(graphDb, variantNode, indelLabel);
 
                 //create genotype relationship
                 properties.put("quality", genotypeQuality);
@@ -614,6 +619,12 @@ public class VariantDatabase {
     }
     public static RelationshipType getRemoveAuthorisedByRelationship() {
         return removeAuthorisedByRelationship;
+    }
+    public static Label getSnpLabel() {
+        return snpLabel;
+    }
+    public static Label getIndelLabel() {
+        return indelLabel;
     }
 
 }
