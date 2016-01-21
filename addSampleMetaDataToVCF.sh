@@ -1,4 +1,5 @@
 #add metadata to VCF
+resultsFolder="http://10.59.210.245/results"
 
 #get file basename
 filename=$(echo "$1" | cut -d. -f1)
@@ -13,7 +14,7 @@ for i in $(ls *.variables); do
 	. "$i"
 
 	#add metadata
-	echo "##SAMPLE=<ID=$sampleId,Tissue=$tissue,WorklistId=$worklistId,SeqId=$seqId,Assay=$assay,PipelineName=$pipelineName,PipelineVersion=$pipelineVersion,RemoteBamFilePath=$remoteBamFilePath,RemoteVcfFilePath=$remoteVcfFilePath>" >> "$filename"_meta.vcf
+	echo \#\#SAMPLE\=\<ID\="$SampleID",Tissue\=Blood,WorklistId\="$ExperimentName",SeqId\="$RunID",Assay\=TruSightOne,PipelineName\=IlluminaTruSightOne,PipelineVersion\=1,RemoteBamFilePath\="$resultsFolder"/"$RunID"/"$SampleID"/"$RunID"_"$SampleID".bam,RemoteVcfFilePath="$resultsFolder"/"$RunID"/"$RunID"_Variants_Filtered.vcf\> >> "$filename"_meta.vcf
 
 done
 
@@ -21,7 +22,7 @@ done
 grep -v '^##' "$1" >> "$filename"_meta.vcf
 
 #validate and index VCF
-java -jar /share/apps/gatk-distros/GenomeAnalysisTK-3.4-46/GenomeAnalysisTK.jar \
+~/jre1.8.0_71/bin/java -Xmx2g -jar /share/apps/GATK-distros/GATK_3.4-46/GenomeAnalysisTK.jar \
 -T ValidateVariants \
 -R /data/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -V "$filename"_meta.vcf \
