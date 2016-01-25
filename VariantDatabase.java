@@ -168,7 +168,7 @@ public class VariantDatabase {
                     Genotype genotype = genotypeIterator.next();
 
                     //skip no-calls, hom-refs,  mixed genotypes or alleles covered by nearby indels
-                    if (genotype.isNoCall() || genotype.isHomRef()){
+                    if (genotype.isNoCall() || genotype.isHomRef() || genotype.isFiltered()){
                         continue;
                     }
                     if (genotype.isMixed()){
