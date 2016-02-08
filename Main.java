@@ -2,6 +2,7 @@ package nhs.genetics.cardiff;
 
 import htsjdk.variant.vcf.VCFFileReader;
 import org.neo4j.graphdb.ConstraintViolationException;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.io.fs.FileUtils;
 
 import java.io.File;

@@ -52,13 +52,10 @@ public class VariantDatabase {
     private static RelationshipType designedByRelationship = RelationshipType.withName("DESIGNED_BY");
     private static RelationshipType containsSymbolRelationship = RelationshipType.withName("CONTAINS_SYMBOL");
     private static RelationshipType hasProteinCodingBiotypeRelationship = RelationshipType.withName("HAS_PROTEIN_CODING_BIOTYPE");
-    private static RelationshipType hasUserCommentRelationship = RelationshipType.withName("HAS_USER_COMMENT");
-    private static RelationshipType hasFeaturePreferenceRelationship = RelationshipType.withName("HAS_FEATURE_PREFERENCE");
-    private static RelationshipType hasPathogenicityRelationship = RelationshipType.withName("HAS_PATHOGENICITY");
+    private static RelationshipType hasUserEventRelationship = RelationshipType.withName("HAS_USER_EVENT");
     private static RelationshipType addedByRelationship = RelationshipType.withName("ADDED_BY");
-    private static RelationshipType removedByRelationship = RelationshipType.withName("REMOVED_BY");
-    private static RelationshipType addAuthorisedByRelationship = RelationshipType.withName("ADD_AUTHORISED_BY");
-    private static RelationshipType removeAuthorisedByRelationship = RelationshipType.withName("REMOVE_AUTHORISED_BY");
+    private static RelationshipType authorisedByRelationship = RelationshipType.withName("AUTHORISED_BY");
+    private static RelationshipType rejectedByRelationship = RelationshipType.withName("REJECTED_BY");
 
     //todo add mutation taster
     //todo add splicing tools
@@ -530,101 +527,120 @@ public class VariantDatabase {
     public static Label getSampleLabel() {
         return sampleLabel;
     }
+
     public static Label getVariantLabel() {
         return variantLabel;
     }
+
     public static Label getAutosomeLabel() {
         return autosomeLabel;
     }
+
     public static Label getxChromLabel() {
         return xChromLabel;
     }
+
     public static Label getyChromLabel() {
         return yChromLabel;
     }
+
     public static Label getMtChromLabel() {
         return mtChromLabel;
     }
-    public static Label getAnnotationLabel() {
-        return annotationLabel;
-    }
-    public static Label getSymbolLabel() {
-        return symbolLabel;
-    }
-    public static Label getCanonicalLabel() {
-        return canonicalLabel;
-    }
-    public static Label getFeatureLabel() {
-        return featureLabel;
-    }
-    public static Label getRunInfoLabel() {
-        return runInfoLabel;
-    }
-    public static Label getVirtualPanelLabel() {
-        return virtualPanelLabel;
-    }
-    public static Label getUserLabel() {
-        return userLabel;
-    }
-    public static Label getFeaturePreferenceLabel() {
-        return featurePreferenceLabel;
-    }
-    public static Label getVariantPathogenicityLabel() {
-        return variantPathogenicityLabel;
-    }
-    public static RelationshipType getHasHetVariantRelationship() {
-        return hasHetVariantRelationship;
-    }
-    public static RelationshipType getHasHomVariantRelationship() {
-        return hasHomVariantRelationship;
-    }
-    public static RelationshipType getInSymbolRelationship() {
-        return inSymbolRelationship;
-    }
-    public static RelationshipType getInFeatureRelationship() {
-        return inFeatureRelationship;
-    }
-    public static RelationshipType getHasUnknownConsequenceRelationship() {
-        return hasUnknownConsequenceRelationship;
-    }
-    public static RelationshipType getHasAnalysisRelationship() {
-        return hasAnalysisRelationship;
-    }
-    public static RelationshipType getDesignedByRelationship() {
-        return designedByRelationship;
-    }
-    public static RelationshipType getContainsSymbolRelationship() {
-        return containsSymbolRelationship;
-    }
-    public static RelationshipType getHasProteinCodingBiotypeRelationship() {
-        return hasProteinCodingBiotypeRelationship;
-    }
-    public static RelationshipType getHasUserCommentRelationship() {
-        return hasUserCommentRelationship;
-    }
-    public static RelationshipType getHasFeaturePreferenceRelationship() {
-        return hasFeaturePreferenceRelationship;
-    }
-    public static RelationshipType getHasPathogenicityRelationship() {
-        return hasPathogenicityRelationship;
-    }
-    public static RelationshipType getAddedByRelationship() {
-        return addedByRelationship;
-    }
-    public static RelationshipType getRemovedByRelationship() {
-        return removedByRelationship;
-    }
-    public static RelationshipType getAddAuthorisedByRelationship() {
-        return addAuthorisedByRelationship;
-    }
-    public static RelationshipType getRemoveAuthorisedByRelationship() {
-        return removeAuthorisedByRelationship;
-    }
+
     public static Label getSnpLabel() {
         return snpLabel;
     }
+
     public static Label getIndelLabel() {
         return indelLabel;
     }
 
+    public static Label getAnnotationLabel() {
+        return annotationLabel;
+    }
+
+    public static Label getSymbolLabel() {
+        return symbolLabel;
+    }
+
+    public static Label getCanonicalLabel() {
+        return canonicalLabel;
+    }
+
+    public static Label getFeatureLabel() {
+        return featureLabel;
+    }
+
+    public static Label getRunInfoLabel() {
+        return runInfoLabel;
+    }
+
+    public static Label getVirtualPanelLabel() {
+        return virtualPanelLabel;
+    }
+
+    public static Label getUserLabel() {
+        return userLabel;
+    }
+
+    public static Label getFeaturePreferenceLabel() {
+        return featurePreferenceLabel;
+    }
+
+    public static Label getVariantPathogenicityLabel() {
+        return variantPathogenicityLabel;
+    }
+
+    public static RelationshipType getHasHetVariantRelationship() {
+        return hasHetVariantRelationship;
+    }
+
+    public static RelationshipType getHasHomVariantRelationship() {
+        return hasHomVariantRelationship;
+    }
+
+    public static RelationshipType getInSymbolRelationship() {
+        return inSymbolRelationship;
+    }
+
+    public static RelationshipType getInFeatureRelationship() {
+        return inFeatureRelationship;
+    }
+
+    public static RelationshipType getHasUnknownConsequenceRelationship() {
+        return hasUnknownConsequenceRelationship;
+    }
+
+    public static RelationshipType getHasAnalysisRelationship() {
+        return hasAnalysisRelationship;
+    }
+
+    public static RelationshipType getDesignedByRelationship() {
+        return designedByRelationship;
+    }
+
+    public static RelationshipType getContainsSymbolRelationship() {
+        return containsSymbolRelationship;
+    }
+
+    public static RelationshipType getHasProteinCodingBiotypeRelationship() {
+        return hasProteinCodingBiotypeRelationship;
+    }
+
+    public static RelationshipType getHasUserEventRelationship() {
+        return hasUserEventRelationship;
+    }
+
+    public static RelationshipType getAddedByRelationship() {
+        return addedByRelationship;
+    }
+
+    public static RelationshipType getAuthorisedByRelationship() {
+        return authorisedByRelationship;
+    }
+
+    public static RelationshipType getRejectedByRelationship() {
+        return rejectedByRelationship;
+    }
 }
