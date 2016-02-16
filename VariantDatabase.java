@@ -43,6 +43,8 @@ public class VariantDatabase {
     private static Label userLabel = Label.label("User");
     private static Label featurePreferenceLabel = Label.label("FeaturePreference");
     private static Label variantPathogenicityLabel = Label.label("VariantPathogenicity");
+    private static Label qualityControlLabel = Label.label("QualityControl");
+    private static Label disorderLabel = Label.label("Disorder");
     private static RelationshipType hasHetVariantRelationship = RelationshipType.withName("HAS_HET_VARIANT");
     private static RelationshipType hasHomVariantRelationship = RelationshipType.withName("HAS_HOM_VARIANT");
     private static RelationshipType inSymbolRelationship = RelationshipType.withName("IN_SYMBOL");
@@ -56,6 +58,7 @@ public class VariantDatabase {
     private static RelationshipType addedByRelationship = RelationshipType.withName("ADDED_BY");
     private static RelationshipType authorisedByRelationship = RelationshipType.withName("AUTHORISED_BY");
     private static RelationshipType rejectedByRelationship = RelationshipType.withName("REJECTED_BY");
+    private static RelationshipType hasAssociatedSymbol = RelationshipType.withName("HAS_ASSOCIATED_SYMBOL");
 
     //todo add mutation taster
     //todo add splicing tools
@@ -95,6 +98,7 @@ public class VariantDatabase {
         Neo4j.createConstraint(graphDb, symbolLabel, "symbolId");
         Neo4j.createConstraint(graphDb, virtualPanelLabel, "virtualPanelId");
         Neo4j.createConstraint(graphDb, userLabel, "userId");
+        Neo4j.createConstraint(graphDb, disorderLabel, "disorder");
 
     }
 
@@ -564,6 +568,10 @@ public class VariantDatabase {
         return symbolLabel;
     }
 
+    public static Label getDisorderLabel() {
+        return disorderLabel;
+    }
+
     public static Label getCanonicalLabel() {
         return canonicalLabel;
     }
@@ -642,5 +650,13 @@ public class VariantDatabase {
 
     public static RelationshipType getRejectedByRelationship() {
         return rejectedByRelationship;
+    }
+
+    public static RelationshipType getHasAssociatedSymbol() {
+        return hasAssociatedSymbol;
+    }
+
+    public static Label getQualityControlLabel() {
+        return qualityControlLabel;
     }
 }
