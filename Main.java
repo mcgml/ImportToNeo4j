@@ -2,7 +2,6 @@ package nhs.genetics.cardiff;
 
 import htsjdk.variant.vcf.VCFFileReader;
 import org.neo4j.graphdb.ConstraintViolationException;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.io.fs.FileUtils;
 
 import java.io.File;
@@ -13,9 +12,11 @@ import java.util.logging.Logger;
 
 public class Main {
 
+    //todo update dbSNP
+
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
-    private static final double version = 0.5;
+    private static final double version = 0.6;
     private static boolean newDatabase = false, addAnnotations = false;
 
     public static void main(String[] args) throws InvalidPropertiesFormatException {
