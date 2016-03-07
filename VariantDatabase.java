@@ -136,6 +136,12 @@ public class VariantDatabase {
                 properties.put("remoteBamFilePath", keyValuePairs.get("RemoteBamFilePath"));
                 properties.put("remoteVcfFilePath", keyValuePairs.get("RemoteVcfFilePath"));
 
+                //optional qc metrics
+                if (keyValuePairs.containsKey("GenotypicGender")) properties.put("genotypicGender", keyValuePairs.get("GenotypicGender"));
+                if (keyValuePairs.containsKey("EstimatedContamination")) properties.put("estimatedContamination", keyValuePairs.get("EstimatedContamination"));
+                if (keyValuePairs.containsKey("PercentageGt30")) properties.put("percentageGt30", keyValuePairs.get("percentageGt30"));
+                if (keyValuePairs.containsKey("DuplicationRate")) properties.put("duplicationRate", keyValuePairs.get("DuplicationRate"));
+
                 Node runInfoNode = Neo4j.addNode(graphDb, runInfoLabel, properties);
                 properties.clear();
 

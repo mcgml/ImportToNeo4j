@@ -16,7 +16,7 @@ public class Main {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
-    private static final double version = 0.6;
+    private static final double version = 0.7;
     private static boolean newDatabase = false, addAnnotations = false;
 
     public static void main(String[] args) throws InvalidPropertiesFormatException {
