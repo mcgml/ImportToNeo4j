@@ -13,15 +13,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by ml on 23/06/15.
- */
-
-/**
  * A class for importing variants and annotations into Neo4j using VCF format
  *
  * @author  Matt Lyon
  * @version 1.0
- * @since   2016-05-09
+ * @since   2015-06-23
  */
 public class VariantDatabase {
     private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());

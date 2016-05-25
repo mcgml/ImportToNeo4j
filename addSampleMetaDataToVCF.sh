@@ -1,5 +1,16 @@
+#Description: Script for annotating VCF with metadata
+#Author: Matthew Lyon
+#Status: RELEASE
+#Mode: BY_SAMPLE/BY_COHORT
+#Date: 25/05/2016
+#Version: 1
+
 #add metadata to VCF
 resultsFolder="http://10.59.210.245/results"
+tissue="Blood"
+assay="AgilentHaloPlex"
+pipelineName="AgilentHaloPlex"
+pipelineVersion="1"
 
 #get file basename
 filename=$(echo "$1" | cut -d. -f1)
@@ -14,7 +25,7 @@ for i in $(ls *.variables); do
 	. "$i"
 
 	#add metadata
-	echo \#\#SAMPLE\=\<ID\="$SampleID",Tissue\=Blood,WorklistId\="$ExperimentName",SeqId\="$RunID",Assay\=TruSightOne,PipelineName\=IlluminaTruSightOne,PipelineVersion\=1,RemoteBamFilePath\="$resultsFolder"/"$RunID"/"$SampleID"/"$RunID"_"$SampleID".bam,RemoteVcfFilePath="$resultsFolder"/"$RunID"/"$RunID"_Variants_Filtered.vcf\> >> "$filename"_meta.vcf
+	echo \#\#SAMPLE\=\<ID\="$SampleID",Tissue\="$tissue",WorklistId\="$ExperimentName",SeqId\="$RunID",Assay\="$assay",PipelineName\="$pipelineName",PipelineVersion\="$pipelineVersion",RemoteBamFilePath\="$resultsFolder"/"$RunID"/"$SampleID"/"$RunID"_"$SampleID".bam,RemoteVcfFilePath="$resultsFolder"/"$RunID"/"$RunID"_Variants_Filtered.vcf\> >> "$filename"_meta.vcf
 
 done
 
@@ -22,7 +33,7 @@ done
 grep -v '^##' "$1" >> "$filename"_meta.vcf
 
 #validate and index VCF
-~/jre1.8.0_71/bin/java -Xmx2g -jar /share/apps/GATK-distros/GATK_3.4-46/GenomeAnalysisTK.jar \
+java -Xmx2g -jar /share/apps/GATK-distros/GATK_3.4-46/GenomeAnalysisTK.jar \
 -T ValidateVariants \
 -R /data/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -V "$filename"_meta.vcf \
