@@ -16,6 +16,13 @@ import java.util.logging.Logger;
  * Created by ml on 23/06/15.
  */
 
+/**
+ * A class for importing variants and annotations into Neo4j using VCF format
+ *
+ * @author  Matt Lyon
+ * @version 1.0
+ * @since   2016-05-09
+ */
 public class VariantDatabase {
     private static final Logger log = Logger.getLogger(VariantDatabase.class.getName());
 
@@ -270,7 +277,7 @@ public class VariantDatabase {
             try {
 
                 //get variant node
-                Node variantNode = Neo4j.getNodes(graphDb, variantLabel, "variantId", genomeVariant.getConcatenatedVariant()).get(0);
+                Node variantNode = Neo4j.getNodes(graphDb, variantLabel, "variantId", genomeVariant.toString()).get(0);
 
                 //create genotype relationship
                 properties.put("quality", genotypeQuality);
@@ -281,7 +288,7 @@ public class VariantDatabase {
                 properties.clear();
 
                 //add new variant
-                properties.put("variantId", genomeVariant.getConcatenatedVariant());
+                properties.put("variantId", genomeVariant.toString());
                 Node variantNode = Neo4j.addNode(graphDb, variantLabel, properties);
                 properties.clear();
 

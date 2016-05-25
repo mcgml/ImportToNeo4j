@@ -7,6 +7,13 @@ import org.neo4j.graphdb.schema.Schema;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * A class of Neo4j functions
+ *
+ * @author  Matt Lyon
+ * @version 1.0
+ * @since   2016-05-09
+ */
 public class Neo4j{
 
     public static void shutdownDatabase(final GraphDatabaseService graphDb){

@@ -16,12 +16,13 @@ public class Main {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
-    private static final double version = 0.7;
+    private static final String version = "1.0.0";
     private static boolean newDatabase = false, addAnnotations = false;
 
     public static void main(String[] args) throws InvalidPropertiesFormatException {
 
         if (args.length < 2 || args.length > 3) {
+            System.err.println("ImportToNeo4j v" + version);
             System.err.println("Usage: <VCF> <db>");
             System.err.println("Options: -n New database, -a Annotated VCF");
             System.exit(1);
