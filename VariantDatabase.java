@@ -80,10 +80,20 @@ public class VariantDatabase {
         this.dbPath = dbPath;
     }
 
-    public void startDatabase(){
+    public void startDatabase() throws FileNotFoundException {
         log.log(Level.INFO, "Starting database ...");
+        File confFile = new File("neo4j.conf");
 
-        graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
+        //check conf file exists
+        if (!confFile.exists()){
+            throw new FileNotFoundException("Could not find neo4j.conf configuration file in current working directory");
+        }
+
+        graphDb = new GraphDatabaseFactory()
+                .newEmbeddedDatabaseBuilder(dbPath)
+                .loadPropertiesFromFile(confFile.toString())
+                .newGraphDatabase();
+
         Neo4j.registerShutdownHook(graphDb);
     }
 
