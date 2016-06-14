@@ -6,6 +6,7 @@ import htsjdk.variant.vcf.VCFFileReader;
 import htsjdk.variant.vcf.VCFHeaderLine;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 
 import java.io.*;
 import java.util.*;
@@ -80,18 +81,12 @@ public class VariantDatabase {
         this.dbPath = dbPath;
     }
 
-    public void startDatabase() throws FileNotFoundException {
+    public void startDatabase() {
         log.log(Level.INFO, "Starting database ...");
-        File confFile = new File("neo4j.conf");
-
-        //check conf file exists
-        if (!confFile.exists()){
-            throw new FileNotFoundException("Could not find neo4j.conf configuration file in current working directory");
-        }
 
         graphDb = new GraphDatabaseFactory()
                 .newEmbeddedDatabaseBuilder(dbPath)
-                .loadPropertiesFromFile(confFile.toString())
+                .setConfig(GraphDatabaseSettings.allow_store_upgrade, "true")
                 .newGraphDatabase();
 
         Neo4j.registerShutdownHook(graphDb);

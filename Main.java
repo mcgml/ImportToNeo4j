@@ -5,7 +5,6 @@ import org.neo4j.graphdb.ConstraintViolationException;
 import org.neo4j.io.fs.FileUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.InvalidPropertiesFormatException;
 import java.util.logging.Level;
@@ -17,7 +16,7 @@ public class Main {
 
     private static final Logger log = Logger.getLogger(Main.class.getName());
 
-    private static final String version = "1.0.3";
+    private static final String version = "1.0.4";
     private static boolean newDatabase = false, addAnnotations = false;
 
     public static void main(String[] args) throws InvalidPropertiesFormatException {
@@ -62,13 +61,7 @@ public class Main {
 
         //create database object
         VariantDatabase variantDatabase = new VariantDatabase(vcfFileReader, new File(args[1]));
-
-        try {
-            variantDatabase.startDatabase();
-        } catch (FileNotFoundException e){
-            log.log(Level.SEVERE, e.getMessage());
-            System.exit(1);
-        }
+        variantDatabase.startDatabase();
 
         //add genotypes
         if (!addAnnotations){
